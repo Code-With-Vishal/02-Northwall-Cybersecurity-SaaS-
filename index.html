@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Northwall Console</title>
+<meta name="description" content="Northwall: threat detection and response for 50 to 500 person companies. Run a simulated attack and watch it get contained.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Martian+Mono:wdth,wght@75..112.5,300..700&display=swap">
+<style>
+/* Layout: a printed incident desk. Paper ground, report-page windows, command bar + dock. No page scroll. */
+:root{
+  --ground:#E9E8E3;     /* paper grey desk */
+  --chrome:#F7F6F2;     /* window paper */
+  --ink:#111214;
+  --ink-2:#4A4C51;      /* secondary text, 7:1 on chrome */
+  --rule:#C9C7BF;
+  --rule-soft:#DEDCD5;
+  --dot:#B4B2AA;        /* map halftone */
+  --red:#D7263D;        /* alarm */
+  --red-wash:#F7E2E4;
+  --green:#1F7A52;      /* contained */
+  --green-wash:#E1EDE6;
+  --mono:"Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --shadow:0 1px 0 rgba(17,18,20,.05), 0 14px 30px -16px rgba(17,18,20,.35);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font:400 12px/1.5 var(--mono);font-stretch:100%;-webkit-font-smoothing:antialiased;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.verify{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);background:repeating-linear-gradient(135deg,transparent 0 4px,rgba(17,18,20,.06) 4px 5px);border:1px dashed var(--rule);padding:0 5px;white-space:nowrap}
+
+/* ---------- shell ---------- */
+.app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top top" "desk desk" "cmd dock";}
+.top{grid-area:top;display:flex;align-items:center;gap:18px;padding:0 16px;height:44px;border-bottom:1px solid var(--ink);background:var(--chrome);position:relative;z-index:50;min-width:0}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.14em;font-size:12.5px;font-stretch:112.5%;white-space:nowrap}
+.brand svg{flex:none}
+.tagline{color:var(--ink-2);font-stretch:75%;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.top .spacer{flex:1}
+.status{display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.08em;white-space:nowrap;font-stretch:87.5%}
+.status .lamp{width:9px;height:9px;border:1.5px solid var(--green);background:var(--green-wash);flex:none}
+.status[data-s="open"] .lamp{border-color:var(--red);background:var(--red)}
+.status[data-s="open"]{color:var(--red)}
+.status[data-s="done"] .lamp{background:var(--green)}
+.status[data-s="done"]{color:var(--green)}
+.clock{font-variant-numeric:tabular-nums;color:var(--ink-2);font-size:10.5px;white-space:nowrap;font-stretch:87.5%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:32px;padding:0 13px;border:1px solid var(--ink);background:var(--chrome);color:var(--ink);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;border-radius:0;text-decoration:none}
+.btn:hover{background:#ECEBE6}
+.btn.solid{background:var(--ink);color:var(--chrome)}
+.btn.solid:hover{background:#2A2C30}
+.btn.alarm{border-color:var(--red);color:var(--red);background:var(--chrome)}
+.btn.alarm:hover{background:var(--red-wash)}
+.btn.alarm.run{background:var(--red);color:#fff}
+.btn .k{font-weight:400;opacity:.7;font-size:10px}
+
+/* ---------- desk ---------- */
+.desk{grid-area:desk;position:relative;overflow:hidden;min-height:0;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(17,18,20,.13) 1px, transparent 1.2px) 0 0/24px 24px,
+    var(--ground);}
+.paper-mark{position:absolute;left:28px;bottom:22px;pointer-events:none;user-select:none;color:#D3D1CA;font-weight:700;font-stretch:75%;line-height:.92;font-size:clamp(40px,7.2vw,104px);letter-spacing:-.02em;margin:0}
+.desk-foot{position:absolute;right:16px;bottom:10px;font-size:10px;color:var(--ink-2);font-stretch:87.5%;pointer-events:none}
+.crop{position:absolute;width:14px;height:14px;border-color:var(--ink-2);border-style:solid;opacity:.45;pointer-events:none}
+.crop.tl{left:10px;top:10px;border-width:1px 0 0 1px}.crop.tr{right:10px;top:10px;border-width:1px 1px 0 0}
+
+/* ---------- windows ---------- */
+.win{position:absolute;display:flex;flex-direction:column;background:var(--chrome);border:1px solid var(--rule);box-shadow:var(--shadow);min-width:0}
+.win[hidden]{display:none!important}
+.win.is-top{border-color:var(--ink)}
+.win:focus{outline:none}
+.win:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.tb{display:flex;align-items:center;gap:10px;height:34px;flex:none;padding:0 4px 0 10px;border-bottom:1px solid var(--rule);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.win.is-top .tb{border-bottom-color:var(--ink)}
+.tb:active{cursor:grabbing}
+.tb .no{font-size:10px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tb h2{margin:0;font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-stretch:100%}
+.tb .fill{flex:1;height:11px;min-width:12px}
+.win.is-top .tb .fill{background:repeating-linear-gradient(180deg,rgba(17,18,20,.55) 0 1px,transparent 1px 3px)}
+.tb .x{width:30px;height:28px;border:0;background:none;display:grid;place-items:center;flex:none}
+.tb .x:hover{background:var(--rule-soft)}
+.tb .x svg{width:12px;height:12px}
+.wb{flex:1;min-height:0;overflow:auto;padding:16px 18px 18px;container-type:inline-size;overscroll-behavior:contain}
+.wf{flex:none;display:flex;justify-content:space-between;gap:10px;padding:4px 10px;border-top:1px solid var(--rule-soft);font-size:9.5px;color:var(--ink-2);font-stretch:75%;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.grip{position:absolute;right:0;bottom:0;width:18px;height:18px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 0 55%,var(--ink-2) 55% 60%,transparent 60% 70%,var(--ink-2) 70% 75%,transparent 75%)}
+.kicker{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 10px;font-stretch:87.5%}
+.prose{font-family:var(--sans);font-size:15px;line-height:1.55;max-width:62ch;margin:0 0 12px}
+.small{font-size:10.5px;color:var(--ink-2);line-height:1.6}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* readme */
+.display{font-weight:600;font-stretch:112.5%;font-size:clamp(20px,2.1vw,28px);line-height:1.15;letter-spacing:-.01em;margin:0 0 16px;text-wrap:balance}
+.lines{list-style:none;margin:0 0 18px;padding:0;border-top:1px solid var(--rule-soft)}
+.lines li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:6px;padding:7px 0;border-bottom:1px solid var(--rule-soft);font-family:var(--sans);font-size:14.5px;line-height:1.45}
+.lines li::before{content:attr(data-n);font-family:var(--mono);font-size:10px;color:var(--ink-2);padding-top:3px;font-variant-numeric:tabular-nums}
+.readme-cta{display:grid;gap:10px;margin-bottom:16px}
+.readme-cta p{margin:0}
+
+/* feed */
+.feedhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;margin-bottom:10px}
+.stamp{display:inline-block;border:1.5px solid var(--red);color:var(--red);font-weight:700;letter-spacing:.18em;font-size:10px;padding:2px 7px;transform:rotate(-2deg);font-stretch:112.5%}
+.feed{list-style:none;margin:0;padding:0;font-size:11.5px}
+.feed li{display:grid;grid-template-columns:62px 58px 74px minmax(0,1fr);gap:8px;padding:7px 0;border-bottom:1px dotted var(--rule);align-items:baseline}
+.feed .t{font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.feed .src{color:var(--ink-2);font-stretch:75%;overflow-wrap:anywhere}
+.feed .msg{min-width:0;overflow-wrap:anywhere}
+.feed li.divider{display:block;text-align:center;color:var(--red);font-size:10px;letter-spacing:.12em;border-bottom:1px solid var(--red);padding:8px 0 5px}
+.feed li.wait{display:block;color:var(--ink-2);border:0;padding-top:10px}
+.feed li.new{animation:ink .6s ease-out}
+@keyframes ink{from{background:rgba(17,18,20,.07)}to{background:transparent}}
+.sev{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-align:center;padding:1px 0;border:1px solid var(--rule);color:var(--ink-2);font-stretch:87.5%}
+.sev.med{border-color:var(--ink);color:var(--ink)}
+.sev.high{border-color:var(--red);color:var(--red)}
+.sev.crit{background:var(--red);border-color:var(--red);color:#fff}
+.sev.act{border-color:var(--green);color:var(--green)}
+.sev.ok{background:var(--green);border-color:var(--green);color:#fff}
+@container (max-width:470px){
+  .feed li{grid-template-columns:auto auto minmax(0,1fr);row-gap:3px}
+  .feed .msg{grid-column:1/-1}
+  .feed .sev{padding:1px 6px}
+}
+
+/* map */
+.mapwin .wb{display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px}
+.mapframe{flex:1 1 auto;min-height:130px;container-type:size;display:grid;place-items:center;position:relative}
+.mapbox{position:relative;width:min(100cqw,calc(100cqh * 2.5714));aspect-ratio:1440/560;max-width:100%}
+.mapbox svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.land{stroke:var(--dot);stroke-width:4.4;stroke-linecap:round;fill:none}
+.grat{stroke:var(--rule-soft);stroke-width:1;fill:none}
+.seg{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;opacity:0}
+.seg.on{opacity:1;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)}
+.seg.dead{stroke:var(--ink-2);stroke-dasharray:7 7!important;stroke-dashoffset:0!important;stroke-width:2}
+.node circle{fill:var(--chrome);stroke:var(--red);stroke-width:3}
+.node{opacity:0;transition:opacity .4s}
+.node.on{opacity:1}
+.site rect{fill:var(--green)}
+.ring{fill:none;stroke:var(--red);stroke-width:2.5;opacity:0}
+.ring.on{opacity:1;animation:pulse 1.4s ease-out infinite;transform-origin:714px 116.8px;transform-box:view-box}
+@keyframes pulse{from{transform:scale(.6);opacity:1}to{transform:scale(1.6);opacity:0}}
+.held{fill:none;stroke:var(--green);stroke-width:4;opacity:0}
+.held.on{opacity:1}
+.block{stroke:var(--ink);stroke-width:5;stroke-linecap:square;opacity:0}
+.block.on{opacity:1}
+.mlabel{position:absolute;transform:translate(-50%,-100%);font-size:10px;line-height:1.2;white-space:nowrap;background:var(--chrome);border:1px solid var(--rule);padding:2px 5px;margin-top:-10px;pointer-events:none;font-stretch:87.5%;opacity:0;transition:opacity .4s}
+.mlabel.on{opacity:1}
+.mlabel.site{color:var(--green);border-color:var(--green)}
+.mlabel.bad{color:var(--red);border-color:var(--red)}
+.mlabel.right{transform:translate(8px,-50%);margin-top:0}
+.mlabel.below{transform:translate(-50%,0);margin-top:10px}
+.mlabel.left{transform:translate(calc(-100% - 8px),-50%);margin-top:0}
+@container (max-width:520px){.mlabel{display:none}}
+.mapcap{display:flex;gap:10px;align-items:baseline;border-top:1px solid var(--ink);padding-top:8px;min-height:36px;font-size:11.5px}
+.mapcap .step{font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap;font-stretch:87.5%}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:10px;color:var(--ink-2);margin:0;padding:0;list-style:none;font-stretch:87.5%}
+.legend i{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:-1px}
+
+/* report */
+.rep-empty{display:grid;gap:14px;align-content:start;max-width:52ch}
+.rep h3{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--ink)}
+.rep .title{font-weight:700;font-stretch:112.5%;font-size:17px;margin:0 0 4px;letter-spacing:.01em}
+.rep dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:3px 16px;margin:8px 0 0;font-size:11.5px}
+.rep dt{color:var(--ink-2)}
+.rep dd{margin:0;min-width:0}
+.rep .ok{color:var(--green);font-weight:700}
+.rep table{width:100%;border-collapse:collapse;font-size:11px}
+.rep td{padding:5px 8px 5px 0;border-bottom:1px dotted var(--rule);vertical-align:top}
+.rep td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.rep ol{margin:4px 0 0;padding-left:20px;font-family:var(--sans);font-size:14px}
+.rep .impact{font-size:12px;border:1px solid var(--green);background:var(--green-wash);padding:10px 12px;margin-top:6px}
+.rep .impact b{font-stretch:112.5%}
+.caret::after{content:"";display:inline-block;width:.55em;height:1em;background:var(--ink);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.rep .endrow{margin-top:18px;padding-top:14px;border-top:1px solid var(--ink)}
+.tablewrap{overflow-x:auto}
+
+/* cost */
+.calc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-bottom:16px}
+.field{display:grid;gap:4px;min-width:0}
+.field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+.field input,.field select,.field textarea{width:100%;min-width:0;height:36px;border:1px solid var(--ink);background:#fff;padding:0 10px;border-radius:0;font-size:13px;font-variant-numeric:tabular-nums}
+.field textarea{height:auto;padding:8px 10px;resize:vertical;font-family:var(--sans);font-size:14px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--ink);outline-offset:1px}
+.field .hint{font-size:10px;color:var(--ink-2)}
+.field.assume input{border-style:dashed}
+.total{border-top:2px solid var(--ink);padding-top:10px}
+.total .big{font-weight:700;font-stretch:112.5%;font-size:clamp(24px,3vw,34px);line-height:1.1;font-variant-numeric:tabular-nums;margin:2px 0 6px;overflow-wrap:anywhere}
+.bars{display:grid;gap:8px;margin:12px 0}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:11px}
+.bar .track{grid-column:1/-1;height:10px;background:var(--rule-soft)}
+.bar .track span{display:block;height:100%;background:var(--ink);transition:width .3s}
+.bar:nth-child(2) .track span{background:repeating-linear-gradient(135deg,var(--ink) 0 2px,transparent 2px 5px)}
+.bar b{font-variant-numeric:tabular-nums}
+@container (max-width:380px){.calc{grid-template-columns:minmax(0,1fr)}}
+
+/* pricing */
+.plans{list-style:none;margin:0 0 14px;padding:0;border-top:2px solid var(--ink)}
+.plan{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.6fr);gap:6px 18px;padding:14px 0;border-bottom:1px solid var(--rule)}
+.plan h3{margin:0;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-stretch:112.5%}
+.plan .price{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;font-stretch:87.5%;line-height:1.1}
+.plan .per{font-size:10px;color:var(--ink-2)}
+.plan .est{font-size:11px;margin-top:4px}
+.plan ul{margin:0;padding:0;list-style:none;font-family:var(--sans);font-size:13.5px;line-height:1.45}
+.plan ul li{padding-left:14px;position:relative}
+.plan ul li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:1px;background:var(--ink)}
+.plan.mark{background:linear-gradient(var(--green-wash),var(--green-wash)) left/4px 100% no-repeat;padding-left:14px}
+.plan .tag{font-size:9.5px;color:var(--green);letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:4px}
+@container (max-width:560px){.plan{grid-template-columns:minmax(0,1fr) auto}.plan ul{grid-column:1/-1}}
+
+/* book */
+.bookgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.bookgrid .wide{grid-column:1/-1}
+@container (max-width:420px){.bookgrid{grid-template-columns:minmax(0,1fr)}}
+.gets{margin:0 0 16px;padding:10px 12px;border:1px solid var(--rule);font-family:var(--sans);font-size:14px;line-height:1.5}
+.gets b{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:4px}
+.err{color:var(--red);font-size:10.5px;min-height:0}
+.done-note{border:1px solid var(--green);background:var(--green-wash);padding:14px;font-family:var(--sans);font-size:14.5px;line-height:1.5}
+.done-note b{font-family:var(--mono);color:var(--green);display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+
+/* ---------- command bar ---------- */
+.cmd{grid-area:cmd;position:relative;display:flex;align-items:center;gap:10px;padding:8px 12px 8px 16px;border-top:1px solid var(--ink);background:var(--chrome);min-width:0;z-index:40}
+.cmdform{flex:1;display:flex;align-items:center;gap:8px;min-width:0;height:38px;border:1px solid var(--ink);background:#fff;padding:0 4px 0 10px}
+.cmdform:focus-within{outline:2px solid var(--ink);outline-offset:1px}
+.prompt{color:var(--red);font-weight:700;white-space:nowrap;font-stretch:87.5%}
+.cmdform input{flex:1;min-width:0;border:0;background:none;height:100%;font-size:13px;outline:none}
+.cmdform .enter{border:0;background:none;font-size:10px;color:var(--ink-2);padding:0 8px;height:30px;white-space:nowrap}
+.chips{display:none;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:32px;padding:0 12px;border:1px solid var(--ink);background:var(--chrome);font-size:11px;border-radius:16px;white-space:nowrap}
+.chip.alarm{border-color:var(--red);color:var(--red)}
+.hints{font-size:10px;color:var(--ink-2);white-space:nowrap;font-stretch:75%}
+.hints kbd{font:inherit;border:1px solid var(--rule);padding:0 4px;background:#fff}
+.slip{position:absolute;left:16px;bottom:calc(100% + 8px);width:min(560px,calc(100% - 32px));max-height:min(46vh,340px);overflow:auto;background:#fff;border:1px solid var(--ink);box-shadow:var(--shadow);padding:10px 12px 12px;font-size:11.5px}
+.slip-head{display:flex;justify-content:space-between;align-items:center;margin:-4px -6px 6px 0}
+.slip-head span{font-size:9.5px;letter-spacing:.14em;color:var(--ink-2)}
+.slip-head button{border:0;background:none;width:28px;height:26px}
+.slip .echo{color:var(--ink-2);margin-top:6px}
+.slip .echo::before{content:"> ";color:var(--red)}
+.slip .out{white-space:pre-wrap;overflow-wrap:anywhere}
+.slip .out button.lnk{border:0;background:none;padding:0;text-decoration:underline;text-underline-offset:2px}
+
+/* ---------- dock ---------- */
+.dock{grid-area:dock;display:flex;align-items:stretch;gap:2px;padding:6px 10px;border-top:1px solid var(--ink);border-left:1px solid var(--rule);background:var(--chrome);z-index:40}
+.dk{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:58px;padding:4px 6px;border:1px solid transparent;background:none;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-stretch:75%;color:var(--ink)}
+.dk svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5}
+.dk:hover{border-color:var(--rule);background:#fff}
+.dk .dot{position:absolute;top:3px;right:8px;width:5px;height:5px;background:var(--ink);opacity:0}
+.dk.open .dot{opacity:1}
+.dk .badge{position:absolute;top:1px;right:3px;min-width:15px;height:15px;padding:0 3px;background:var(--red);color:#fff;font-size:9px;line-height:15px;text-align:center;font-stretch:87.5%}
+.dk.scan{color:var(--red)}
+
+/* tabs (touch layout) */
+.tabs{grid-area:tabs;display:none;gap:0;overflow-x:auto;scrollbar-width:none;padding:8px 10px 0;background:var(--ground);border-bottom:1px solid var(--ink)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;display:flex;align-items:center;height:32px;border:1px solid var(--rule);border-bottom:0;background:#DFDED8;margin-right:-1px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-stretch:87.5%;position:relative;top:1px}
+.tab .go{border:0;background:none;height:100%;padding:0 4px 0 11px;white-space:nowrap}
+.tab .cx{border:0;background:none;width:28px;height:100%;display:grid;place-items:center;color:var(--ink-2)}
+.tab .cx svg{width:9px;height:9px}
+.tab[aria-selected="true"]{background:var(--chrome);border-color:var(--ink);z-index:2;height:34px;margin-top:-2px}
+
+/* ---------- mid-width desktop: stack command and dock ---------- */
+@media (max-width:1060px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "desk" "cmd" "dock"}
+  .dock{justify-content:center;border-left:0}
+  .tagline{display:none}
+  .hints{display:none}
+}
+@media (pointer:coarse){ .chips{display:flex} .hints{display:none} }
+
+/* ---------- touch / phone layout (set by JS: .m) ---------- */
+.m .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto auto;grid-template-areas:"top" "tabs" "desk" "cmd" "dock"}
+.m .tabs{display:flex}
+.m .top{height:44px;gap:10px;padding:0 10px 0 12px}
+.m .tagline,.m .clock{display:none}
+.m .desk{background:var(--ground)}
+.m .paper-mark,.m .desk-foot,.m .crop{display:none}
+.m .win{inset:0!important;width:auto!important;height:auto!important;border:0;box-shadow:none}
+.m .tb{cursor:default;touch-action:pan-y}
+.m .tb .x,.m .grip{display:none}
+.m .tb .fill{background:none!important}
+.m .cmd{flex-direction:column;align-items:stretch;gap:6px;padding:8px 10px}
+.m .chips{display:flex}
+.m .hints,.m .cmd .scanbtn{display:none}
+.m .cmdform{height:36px}
+.m .dock{justify-content:space-between;padding:4px 6px calc(4px + env(safe-area-inset-bottom,0px));gap:0;border-left:0}
+.m .dk{min-width:0;flex:1;padding:4px 0;min-height:46px}
+.m .dk .dot{right:calc(50% - 16px)}
+.m .dk .badge{right:calc(50% - 22px)}
+.m .slip{left:10px;width:calc(100% - 20px);max-height:40vh}
+/* landscape phone: dock becomes a left rail, command row is one line */
+.m.l .app{grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"top top" "dock tabs" "dock desk" "dock cmd"}
+.m.l .top{height:38px}
+.m.l .dock{flex-direction:column;border-top:0;border-right:1px solid var(--ink);padding:4px 2px calc(4px + env(safe-area-inset-bottom,0px)) calc(2px + env(safe-area-inset-left,0px));overflow-y:auto}
+.m.l .dk{min-height:0;flex:1;gap:1px}
+.m.l .dk svg{width:17px;height:17px}
+.m.l .cmd{flex-direction:row;align-items:center}
+.m.l .cmdform{flex:0 0 42%}
+.m.l .tabs{padding-top:5px}
+.m.l .tab{height:28px}
+.m.l .tab[aria-selected="true"]{height:30px}
+.m.l .wb{padding:10px 14px}
+@media (max-width:380px){ .m .status .txt{display:none} .m .brand{font-size:11.5px;letter-spacing:.1em} .m .top .btn{padding:0 9px;font-size:10px} }
+
+/* ---------- no-JS fallback: one linear report page ---------- */
+html:not(.js) body{overflow:auto}
+html:not(.js) .app{display:block;height:auto}
+html:not(.js) .desk{overflow:visible;padding:16px;display:grid;gap:16px;max-width:860px;margin:0 auto}
+html:not(.js) .win{position:static;display:flex!important}
+html:not(.js) .win[hidden]{display:flex!important}
+html:not(.js) .tb{cursor:default}
+html:not(.js) .tb .x,html:not(.js) .grip,html:not(.js) .cmd,html:not(.js) .dock,html:not(.js) .tabs,html:not(.js) .paper-mark,html:not(.js) .crop,html:not(.js) .js-only{display:none!important}
+html:not(.js) .desk-foot{position:static}
+html:not(.js) .mapframe{height:320px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .ring.on{animation:none;opacity:.9}
+}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x=".75" y=".75" width="16.5" height="16.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M1 6.5h16M1 12h16M6 1v5.5M12 6.5V12M6 12v5" stroke="currentColor" stroke-width="1.5"/><rect x="12" y="1" width="5" height="5.5" fill="#D7263D"/></svg>
+      NORTHWALL
+    </div>
+    <div class="tagline">See the attack before it lands.</div>
+    <div class="spacer"></div>
+    <div class="status" id="status" data-s="idle" role="status" aria-live="polite"><span class="lamp" aria-hidden="true"></span><span class="txt" id="statusTxt">QUIET · 3 SITES WATCHED</span></div>
+    <div class="clock" id="clock" aria-hidden="true">SIM 09:38:00</div>
+    <button class="btn solid" type="button" data-open="book">Book a review</button>
+  </header>
+
+  <div class="tabs js-only" id="tabs" role="tablist" aria-label="Open windows"></div>
+
+  <main class="desk" id="desk" aria-label="Security console desktop">
+    <span class="crop tl" aria-hidden="true"></span><span class="crop tr" aria-hidden="true"></span>
+    <p class="paper-mark" aria-hidden="true">SEE THE ATTACK<br>BEFORE IT LANDS.</p>
+    <p class="desk-foot">Concept site. Design and build by [YOUR STUDIO].</p>
+
+    <!-- 1 README -->
+    <section class="win" id="w-readme" data-id="readme" role="dialog" aria-labelledby="t-readme" tabindex="-1">
+      <div class="tb"><span class="no">01</span><h2 id="t-readme">Readme</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Readme"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb">
+        <p class="kicker">Northwall / threat detection and response</p>
+        <p class="display">See the attack before it lands.</p>
+        <ol class="lines">
+          <li data-n="1">Northwall watches laptops, servers, email, sign-ins and cloud apps from one console.</li>
+          <li data-n="2">It joins related alerts into one incident, so your team reads one story instead of a pile of alerts.</li>
+          <li data-n="3">When an attack is confirmed, it isolates the device, revokes the session and blocks the address.</li>
+          <li data-n="4">Every incident ends with a written report your leadership and insurer can read.</li>
+          <li data-n="5">Built for companies of 50 to 500 people with a small IT team and no night shift.</li>
+        </ol>
+        <div class="readme-cta">
+          <p class="small">Watch it work on a fictional company. Everything that follows is a simulation.</p>
+          <div class="row">
+            <button class="btn alarm" type="button" data-cmd="scan">Run scan <span class="k">scan</span></button>
+            <button class="btn solid" type="button" data-open="book">Book a security review</button>
+          </div>
+        </div>
+        <p class="small">Compliance: <span class="verify">[VERIFY: SOC 2 status]</span><br><span class="js-only">Keys: <b>/</b> to type a command, <b>Alt+1</b> to <b>Alt+7</b> open windows, <b>Esc</b> closes the top window, arrow keys move a focused title bar.</span></p>
+      </div>
+      <div class="wf"><span>NW-FORM 01 · README.TXT</span><span>5 lines</span></div>
+    </section>
+
+    <!-- 2 FEED -->
+    <section class="win" id="w-feed" data-id="feed" role="dialog" aria-labelledby="t-feed" tabindex="-1">
+      <div class="tb"><span class="no">02</span><h2 id="t-feed">Detection feed</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Detection feed"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb" id="feedScroll">
+        <div class="feedhead">
+          <p class="kicker" style="margin:0">Harrow &amp; Pine Logistics (fictional) · 240 staff · 3 sites</p>
+          <span class="stamp">SIMULATION</span>
+        </div>
+        <ul class="feed" id="feed" aria-live="off">
+          <li><span class="t">09:30:00</span><span class="sev ok">OK</span><span class="src">northwall</span><span class="msg">212 of 212 devices reporting.</span></li>
+          <li><span class="t">09:34:12</span><span class="sev">INFO</span><span class="src">identity</span><span class="msg">41 sign-ins in the last hour, all from known networks.</span></li>
+          <li><span class="t">09:37:48</span><span class="sev">INFO</span><span class="src">mail-gw</span><span class="msg">318 emails scanned, 6 held as spam.</span></li>
+          <li><span class="t">09:40:00</span><span class="sev ok">OK</span><span class="src">northwall</span><span class="msg">No open incidents.</span></li>
+          <li class="wait js-only" id="feedWait">Waiting. Type <b>scan</b> or press Run scan to start a simulated attack.</li>
+        </ul>
+      </div>
+      <div class="wf"><span>NW-FORM 02 · LIVE EVENTS</span><span id="feedCount">4 events</span></div>
+    </section>
+
+    <!-- 3 MAP -->
+    <section class="win mapwin" id="w-map" data-id="map" role="dialog" aria-labelledby="t-map" tabindex="-1">
+      <div class="tb"><span class="no">03</span><h2 id="t-map">Attack map</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Attack map"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb">
+        <div class="mapframe">
+          <div class="mapbox" id="mapbox">
+            <svg viewBox="0 0 1440 560" role="img" aria-labelledby="mapAlt" id="mapsvg">
+              <title id="mapAlt">World map. Monitored sites in Leeds, Chicago and Dubai. During the simulation, a path runs from two relay servers and a control server to the Leeds office, then is blocked.</title>
+              <g id="grat"></g>
+              <path class="land" id="land" d=""></path>
+              <g id="sites"></g>
+              <g id="path"></g>
+            </svg>
+          </div>
+        </div>
+        <div class="mapcap"><span class="step" id="mapStep">IDLE</span><span id="mapCap" aria-live="polite">No activity. Three sites monitored. Run a scan to watch an attack path.</span></div>
+        <ul class="legend">
+          <li><i style="background:var(--green)"></i>Monitored site</li>
+          <li><i style="border:2px solid var(--red);border-radius:50%"></i>Attacker server</li>
+          <li><i style="background:var(--red);height:3px;vertical-align:3px"></i>Attack path</li>
+          <li><i style="border-top:2px dashed var(--ink-2);height:0;vertical-align:3px"></i>Blocked path</li>
+        </ul>
+      </div>
+      <div class="wf"><span>NW-FORM 03 · EQUIRECTANGULAR, 2.5° GRID</span><span>simulated</span></div>
+    </section>
+
+    <!-- 4 REPORT -->
+    <section class="win" id="w-report" data-id="report" role="dialog" aria-labelledby="t-report" tabindex="-1">
+      <div class="tb"><span class="no">04</span><h2 id="t-report">Incident report</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Incident report"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb" id="repScroll">
+        <div class="rep-empty" id="repEmpty">
+          <p class="kicker" style="margin:0">Report INC-0417 · not filed</p>
+          <p class="prose" style="margin:0">No incident on file. Run a scan and Northwall writes this report while you watch: what happened, when, what it did about it, and what it would have cost you.</p>
+          <div class="row"><button class="btn alarm js-only" type="button" data-cmd="scan">Run scan</button></div>
+        </div>
+        <article class="rep" id="rep" hidden></article>
+      </div>
+      <div class="wf"><span>NW-FORM 04 · INCIDENT REPORT</span><span id="repPage">draft</span></div>
+    </section>
+
+    <!-- 5 COST -->
+    <section class="win" id="w-cost" data-id="cost" role="dialog" aria-labelledby="t-cost" tabindex="-1">
+      <div class="tb"><span class="no">05</span><h2 id="t-cost">Downtime cost</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Downtime cost"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb">
+        <p class="kicker">What an outage costs you. Example inputs, change them.</p>
+        <form class="calc" id="calc" onsubmit="return false">
+          <div class="field"><label for="c-emp">Employees</label><input id="c-emp" type="number" inputmode="numeric" min="1" max="100000" step="1" value="240"></div>
+          <div class="field"><label for="c-rev">Revenue per hour</label><input id="c-rev" type="number" inputmode="numeric" min="0" step="100" value="9000"></div>
+          <div class="field"><label for="c-hrs">Hours down</label><input id="c-hrs" type="number" inputmode="decimal" min="0" max="2000" step="1" value="16"></div>
+          <div class="field"><label for="c-cur">Currency</label><select id="c-cur"><option value="USD">USD $</option><option value="GBP">GBP £</option><option value="AUD">AUD A$</option><option value="AED">AED</option></select></div>
+          <div class="field assume" style="grid-column:1/-1"><label for="c-wage">Assumed cost per employee hour</label><input id="c-wage" type="number" inputmode="numeric" min="0" step="1" value="45"><span class="hint">Salary plus overhead while people cannot work. Use your own figure. <span class="verify">[VERIFY]</span></span></div>
+        </form>
+        <div class="total" aria-live="polite" id="costOut">
+          <span class="kicker" id="costLead">16 hours down would cost about</span>
+          <div class="big" id="costTotal">$316,800</div>
+          <div class="bars">
+            <div class="bar"><span>Lost revenue</span><b id="costRev">$144,000</b><div class="track"><span id="barRev" style="width:45%"></span></div></div>
+            <div class="bar"><span>Idle staff time</span><b id="costIdle">$172,800</b><div class="track"><span id="barIdle" style="width:55%"></span></div></div>
+          </div>
+          <p class="small">Not included: recovery work, forensics, fines, ransom, lost customers. The real number is higher.</p>
+        </div>
+      </div>
+      <div class="wf"><span>NW-FORM 05 · COST WORKSHEET</span><span>your inputs</span></div>
+    </section>
+
+    <!-- 6 PRICING -->
+    <section class="win" id="w-pricing" data-id="pricing" role="dialog" aria-labelledby="t-pricing" tabindex="-1">
+      <div class="tb"><span class="no">06</span><h2 id="t-pricing">Pricing</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Pricing"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb">
+        <p class="kicker">Per employee, per month, billed annually. Concept pricing.</p>
+        <ul class="plans">
+          <li class="plan">
+            <div><h3>Watch</h3><span class="per">We see it, you act</span></div>
+            <div><div class="price">$5</div><div class="per">per employee / month</div><div class="est js-only" data-rate="5"></div></div>
+            <ul><li>Detection across devices, email, sign-ins and cloud apps</li><li>Linked incidents instead of single alerts</li><li>Alerts to email, Slack or Teams</li></ul>
+          </li>
+          <li class="plan mark">
+            <div><h3>Watch + Respond</h3><span class="per">Contain in seconds</span><span class="tag">What the scan showed</span></div>
+            <div><div class="price">$9</div><div class="per">per employee / month</div><div class="est js-only" data-rate="9"></div></div>
+            <ul><li>Everything in Watch</li><li>Automatic containment: isolate device, revoke session, block address</li><li>Written incident report for every incident</li></ul>
+          </li>
+          <li class="plan">
+            <div><h3>Managed</h3><span class="per">Our analysts on call</span></div>
+            <div><div class="price">$14</div><div class="per">per employee / month</div><div class="est js-only" data-rate="14"></div></div>
+            <ul><li>Everything in Watch + Respond</li><li>Northwall analysts review and act around the clock <span class="verify">[VERIFY: response SLA]</span></li><li>Quarterly review with your leadership</li></ul>
+          </li>
+        </ul>
+        <p class="small js-only" id="estNote">Estimates use 240 employees from the Downtime cost worksheet. <button class="lnkbtn" type="button" data-open="cost" style="border:0;background:none;padding:0;text-decoration:underline;font-size:inherit">Change headcount</button></p>
+        <div class="row" style="margin-top:12px"><button class="btn solid" type="button" data-open="book">Book a security review</button><span class="small">Every plan starts with one. It is free.</span></div>
+      </div>
+      <div class="wf"><span>NW-FORM 06 · SCHEDULE OF FEES</span><span>USD</span></div>
+    </section>
+
+    <!-- 7 BOOK -->
+    <section class="win" id="w-book" data-id="book" role="dialog" aria-labelledby="t-book" tabindex="-1">
+      <div class="tb"><span class="no">07</span><h2 id="t-book">Book a review</h2><span class="fill"></span><button class="x" type="button" aria-label="Close Book a review"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div class="wb">
+        <div class="gets"><b>The security review</b>45 minutes with a Northwall engineer. We look at how an attacker would reach you today, where your alerts go after 6 pm, and what you would see in a report like INC-0417. You keep the written findings whether you buy or not.</div>
+        <form id="book" novalidate>
+          <div class="bookgrid">
+            <div class="field"><label for="b-name">Your name</label><input id="b-name" name="name" autocomplete="name" required></div>
+            <div class="field"><label for="b-email">Work email</label><input id="b-email" name="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label for="b-co">Company</label><input id="b-co" name="company" autocomplete="organization" required></div>
+            <div class="field"><label for="b-size">Headcount</label><select id="b-size" name="size"><option>50 to 99</option><option selected>100 to 249</option><option>250 to 500</option><option>Other</option></select></div>
+            <div class="field"><label for="b-worry">Main concern</label><select id="b-worry" name="worry"><option>Ransomware</option><option>Phishing and stolen logins</option><option>No cover outside office hours</option><option>Insurer or audit requirement</option><option>Something else</option></select></div>
+            <div class="field"><label for="b-week">Preferred week</label><select id="b-week" name="week"><option>Next available</option></select></div>
+            <div class="field wide"><label for="b-note">Anything we should know (optional)</label><textarea id="b-note" name="note" rows="2"></textarea></div>
+          </div>
+          <p class="err" id="bookErr" role="alert"></p>
+          <div class="row"><button class="btn solid" type="submit">Request my review</button><span class="small">Concept site: nothing is sent.</span></div>
+        </form>
+        <div class="done-note" id="bookDone" hidden tabindex="-1"></div>
+      </div>
+      <div class="wf"><span>NW-FORM 07 · REQUEST</span><span>1 page</span></div>
+    </section>
+  </main>
+
+  <div class="cmd js-only" id="cmdbar">
+    <div class="slip" id="slip" hidden data-lenis-prevent>
+      <div class="slip-head"><span>CONSOLE OUTPUT</span><button type="button" id="slipX" aria-label="Close console output"><svg viewBox="0 0 12 12" width="11" height="11"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.5"/></svg></button></div>
+      <div id="slipLog" role="log" aria-live="polite"></div>
+    </div>
+    <form class="cmdform" id="cmdform" autocomplete="off">
+      <label class="prompt" for="cmd">nw&gt;</label>
+      <input id="cmd" type="text" spellcheck="false" autocapitalize="off" enterkeyhint="go" placeholder="type help, scan, pricing or book" aria-describedby="cmdHint">
+      <button class="enter" type="submit">ENTER ↵</button>
+    </form>
+    <div class="chips" id="chips" aria-label="Suggested commands">
+      <button class="chip alarm" type="button" data-cmd="scan">scan</button>
+      <button class="chip" type="button" data-cmd="help">help</button>
+      <button class="chip" type="button" data-cmd="cost">cost</button>
+      <button class="chip" type="button" data-cmd="pricing">pricing</button>
+      <button class="chip" type="button" data-cmd="book">book</button>
+      <button class="chip" type="button" data-cmd="reset">reset</button>
+    </div>
+    <span class="hints" id="cmdHint"><kbd>/</kbd> type · <kbd>Tab</kbd> complete · <kbd>Esc</kbd> close</span>
+    <button class="btn alarm scanbtn" type="button" data-cmd="scan">Run scan</button>
+  </div>
+
+  <nav class="dock js-only" id="dock" aria-label="Windows">
+    <button class="dk" type="button" data-open="readme" aria-keyshortcuts="Alt+1"><svg viewBox="0 0 20 20"><path d="M4 2.5h8l4 4v11H4z M12 2.5v4h4 M7 10h6 M7 13h6"/></svg>Readme<span class="dot"></span></button>
+    <button class="dk" type="button" data-open="feed" aria-keyshortcuts="Alt+2"><svg viewBox="0 0 20 20"><path d="M3 4.5h2M7 4.5h10M3 9.5h2M7 9.5h10M3 14.5h2M7 14.5h7"/></svg>Feed<span class="dot"></span><span class="badge" id="feedBadge" hidden>0</span></button>
+    <button class="dk" type="button" data-open="map" aria-keyshortcuts="Alt+3"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="12"/><path d="M4.5 12.5c3-5 6-1 11-6"/><circle cx="15.5" cy="6.5" r="1.3"/></svg>Map<span class="dot"></span></button>
+    <button class="dk" type="button" data-open="report" aria-keyshortcuts="Alt+4"><svg viewBox="0 0 20 20"><path d="M4 2.5h12v15H4z M7 7h6 M7 10h4"/><path d="M8 14l1.5 1.5L13 12"/></svg>Report<span class="dot"></span></button>
+    <button class="dk" type="button" data-open="cost" aria-keyshortcuts="Alt+5"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M10 5.5V10l3 2"/></svg>Cost<span class="dot"></span></button>
+    <button class="dk" type="button" data-open="pricing" aria-keyshortcuts="Alt+6"><svg viewBox="0 0 20 20"><path d="M2.5 10.5l8-8h7v7l-8 8z"/><circle cx="13.5" cy="6.5" r="1.3"/></svg>Pricing<span class="dot"></span></button>
+    <button class="dk" type="button" data-open="book" aria-keyshortcuts="Alt+7"><svg viewBox="0 0 20 20"><rect x="2.5" y="4" width="15" height="13.5"/><path d="M2.5 8h15M6.5 2v4M13.5 2v4M7 12.5l2 2 4-4"/></svg>Book<span class="dot"></span></button>
+  </nav>
+</div>
+
+<noscript><p style="padding:16px;font:12px/1.5 monospace">The interactive console needs JavaScript. You are reading the linear report version.</p></noscript>
+
+<script>
+(()=>{
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const reduced=()=>RM.matches;
+const IDS=['readme','feed','map','report','cost','pricing','book'];
+const NAMES={readme:'Readme',feed:'Detection feed',map:'Attack map',report:'Incident report',cost:'Downtime cost',pricing:'Pricing',book:'Book a review'};
+const desk=$('#desk'), root=document.documentElement;
+const W=id=>$('#w-'+id);
+
+/* ---------------- window manager ---------------- */
+const S={z:[],tabs:[],mode:'',shape:'',rect:{},lastW:0,lastH:0,running:false,done:false,feedNew:0};
+// default rects as fractions of the desk: [x,y,w,h]
+const LAYOUT={
+  wide:{readme:[.018,.035,.29,.9],map:[.29,.07,.43,.6],feed:[.71,.03,.275,.72],report:[.4,.25,.36,.72],cost:[.05,.3,.33,.66],pricing:[.2,.06,.5,.86],book:[.56,.05,.35,.92]},
+  tall:{readme:[.03,.02,.62,.44],feed:[.42,.07,.55,.4],map:[.03,.38,.82,.3],report:[.14,.5,.82,.48],cost:[.05,.36,.72,.5],pricing:[.05,.12,.9,.62],book:[.16,.06,.8,.86]}
+};
+const MINW=300, MINH=200;
+function deskSize(){const r=desk.getBoundingClientRect();return {w:r.width,h:r.height}}
+function computeMode(){
+  const w=innerWidth,h=innerHeight;
+  const mobile=w<760||h<520;
+  root.classList.toggle('m',mobile);
+  root.classList.toggle('l',mobile&&w>h);
+  return mobile?'m':'d';
+}
+function defaultRect(id){
+  const {w,h}=deskSize(); const f=LAYOUT[S.shape][id];
+  let rw=Math.max(Math.min(f[2]*w,w-16),Math.min(MINW,w-16));
+  let rh=Math.max(Math.min(f[3]*h,h-16),Math.min(MINH,h-16));
+  if(id==='map') rh=Math.max(Math.min(rh,rw/2.5714+150),Math.min(MINH,h-16)); // fit the map's aspect, no dead paper
+  return clampRect({x:f[0]*w,y:f[1]*h,w:rw,h:rh});
+}
+function clampRect(r){
+  const {w,h}=deskSize();
+  r.w=Math.min(Math.max(r.w,Math.min(MINW,w-8)),w-8); r.h=Math.min(Math.max(r.h,Math.min(MINH,h-8)),h-8);
+  r.x=Math.min(Math.max(r.x,4),w-r.w-4); r.y=Math.min(Math.max(r.y,4),h-r.h-4);
+  return r;
+}
+function applyRect(id){
+  const el=W(id), r=S.rect[id]; if(!r) return;
+  el.style.left=r.x+'px'; el.style.top=r.y+'px'; el.style.width=r.w+'px'; el.style.height=r.h+'px';
+}
+function render(){
+  const top=S.z[S.z.length-1];
+  IDS.forEach(id=>{
+    const el=W(id), zi=S.z.indexOf(id), open=zi>-1;
+    el.style.zIndex=open?10+zi:'';
+    el.classList.toggle('is-top',id===top);
+    el.hidden=S.mode==='m'?id!==top:!open;
+    if(S.mode==='d'&&open) applyRect(id);
+    const dk=$('.dk[data-open="'+id+'"]'); dk.classList.toggle('open',open);
+    dk.setAttribute('aria-label',NAMES[id]+(open?' (open)':''));
+  });
+  // tabs: touch layout
+  const tabs=$('#tabs'); tabs.innerHTML='';
+  S.tabs.forEach(id=>{
+    const t=document.createElement('div'); t.className='tab'; t.setAttribute('role','tab'); t.setAttribute('aria-selected',String(id===top)); t.setAttribute('aria-controls','w-'+id);
+    t.innerHTML='<button class="go" type="button" tabindex="'+(id===top?0:-1)+'">'+NAMES[id]+'</button><button class="cx" type="button" aria-label="Close '+NAMES[id]+'"><svg viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.6"/></svg></button>';
+    $('.go',t).onclick=()=>openWin(id,{focus:false});
+    $('.cx',t).onclick=()=>closeWin(id);
+    tabs.appendChild(t);
+  });
+  const sel=$('.tab[aria-selected="true"]',tabs); if(sel) sel.scrollIntoView({block:'nearest',inline:'nearest'});
+  if(top==='feed'){S.feedNew=0} updateBadge();
+  if(S.mode==='m'&&top==='feed') scrollFeed();
+}
+function openWin(id,{focus=true}={}){
+  const was=S.z.indexOf(id);
+  if(was>-1) S.z.splice(was,1);
+  else { if(!S.rect[id]) S.rect[id]=defaultRect(id); }
+  S.z.push(id);
+  if(!S.tabs.includes(id)) S.tabs.push(id);
+  render();
+  if(focus) W(id).focus({preventScroll:true});
+}
+function closeWin(id){
+  const i=S.z.indexOf(id); if(i<0) return;
+  const hadFocus=W(id).contains(document.activeElement);
+  S.z.splice(i,1); S.tabs=S.tabs.filter(t=>t!==id);
+  render();
+  if(hadFocus||document.activeElement===document.body){
+    const top=S.z[S.z.length-1];
+    if(top) W(top).focus({preventScroll:true}); else $('#cmd').focus({preventScroll:true});
+  }
+}
+function raise(id){ if(S.z[S.z.length-1]!==id) openWin(id,{focus:false}) }
+
+function setMode(force){
+  const m=computeMode(); const {w,h}=deskSize(); const shape=w/h>1.15?'wide':'tall';
+  const changed=m!==S.mode||shape!==S.shape;
+  S.mode=m; S.shape=shape;
+  if(changed||force){ if(m==='d'){ S.z.forEach(id=>S.rect[id]=defaultRect(id)); IDS.forEach(id=>{if(!S.z.includes(id)) delete S.rect[id]}) } }
+  else if(m==='d'){ S.z.forEach(id=>S.rect[id]=clampRect(S.rect[id])) }
+  if(m==='m') IDS.forEach(id=>{const el=W(id);['left','top','width','height'].forEach(p=>el.style[p]='')});
+  render();
+}
+
+// drag, raise, resize, keyboard move
+IDS.forEach(id=>{
+  const el=W(id), tb=$('.tb',el);
+  $('.x',tb).addEventListener('click',()=>closeWin(id));
+  el.addEventListener('pointerdown',()=>raise(id),true);
+  el.addEventListener('focusin',()=>{ if(S.mode==='d') raise(id) });
+  const grip=document.createElement('span'); grip.className='grip'; grip.setAttribute('aria-hidden','true'); el.appendChild(grip);
+  tb.tabIndex=0; tb.setAttribute('aria-label','Move '+NAMES[id]+' window with arrow keys');
+  let d=null;
+  tb.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button')) return;
+    if(S.mode==='m'){ d={sx:e.clientX,sy:e.clientY,swipe:true}; return }
+    if(e.button!==0) return;
+    const r=S.rect[id]; d={sx:e.clientX,sy:e.clientY,x:r.x,y:r.y}; tb.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  tb.addEventListener('pointermove',e=>{
+    if(!d||d.swipe) return;
+    const r=S.rect[id]; r.x=d.x+e.clientX-d.sx; r.y=d.y+e.clientY-d.sy; clampRect(r); applyRect(id);
+  });
+  const end=e=>{
+    if(d&&d.swipe&&e.type==='pointerup'){ const dx=e.clientX-d.sx, dy=e.clientY-d.sy; if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*1.5) stepTab(dx<0?1:-1) }
+    d=null;
+  };
+  tb.addEventListener('pointerup',end); tb.addEventListener('pointercancel',end);
+  tb.addEventListener('keydown',e=>{
+    if(S.mode!=='d') return; const r=S.rect[id]; const st=e.shiftKey?48:16; let hit=true;
+    if(e.key==='ArrowLeft') r.x-=st; else if(e.key==='ArrowRight') r.x+=st; else if(e.key==='ArrowUp') r.y-=st; else if(e.key==='ArrowDown') r.y+=st; else hit=false;
+    if(hit){ e.preventDefault(); clampRect(r); applyRect(id) }
+  });
+  let g=null;
+  grip.addEventListener('pointerdown',e=>{ if(S.mode!=='d') return; const r=S.rect[id]; g={sx:e.clientX,sy:e.clientY,w:r.w,h:r.h}; grip.setPointerCapture(e.pointerId); e.preventDefault(); e.stopPropagation(); raise(id) });
+  grip.addEventListener('pointermove',e=>{ if(!g) return; const r=S.rect[id], {w,h}=deskSize(); r.w=Math.min(Math.max(g.w+e.clientX-g.sx,MINW),w-r.x-4); r.h=Math.min(Math.max(g.h+e.clientY-g.sy,MINH),h-r.y-4); applyRect(id) });
+  const gend=()=>g=null; grip.addEventListener('pointerup',gend); grip.addEventListener('pointercancel',gend);
+});
+function stepTab(dir){ const top=S.z[S.z.length-1]; const i=S.tabs.indexOf(top); const n=S.tabs[(i+dir+S.tabs.length)%S.tabs.length]; if(n) openWin(n,{focus:false}) }
+$('#tabs').addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key==='ArrowLeft'){ e.preventDefault(); stepTab(e.key==='ArrowRight'?1:-1); const s=$('.tab[aria-selected="true"] .go'); s&&s.focus() } });
+
+/* ---------------- delegated buttons ---------------- */
+document.addEventListener('click',e=>{
+  const o=e.target.closest('[data-open]'); if(o){ openWin(o.dataset.open,{focus:true}); return }
+  const c=e.target.closest('[data-cmd]'); if(c){ run(c.dataset.cmd,{echo:true,fromChip:true}) }
+});
+
+/* ---------------- keyboard ---------------- */
+document.addEventListener('keydown',e=>{
+  const inField=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+  if(e.key==='Escape'){
+    if(!$('#slip').hidden&&(document.activeElement===$('#cmd')||$('#slip').contains(document.activeElement))){ hideSlip(); return }
+    const top=S.z[S.z.length-1]; if(top){ e.preventDefault(); closeWin(top) } else hideSlip();
+    return;
+  }
+  if(e.altKey&&/^Digit[1-7]$/.test(e.code)){ e.preventDefault(); openWin(IDS[+e.code.slice(5)-1],{focus:true}); return }
+  if(!inField&&e.key==='/'&&!e.metaKey&&!e.ctrlKey){ e.preventDefault(); $('#cmd').focus() }
+});
+
+/* ---------------- clock ---------------- */
+let simT=9*3600+38*60; const clock=$('#clock');
+const fmtT=s=>[Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(n=>String(n).padStart(2,'0')).join(':');
+const toS=t=>{const [h,m,s]=t.split(':').map(Number);return h*3600+m*60+s};
+setInterval(()=>{simT++;clock.textContent='SIM '+fmtT(simT)},1000);
+
+/* ---------------- world map ---------------- */
+const MAP='000000001ffcfffd60000001000000000000000000021fc3ffff000f4000000300000000000000e86f8ffffe000200003000e00000000000030000007fff00000002001ff0000000000003fc8fe03ffe000000041ffffff0f00001ffbf3e52b80ffc0001fc10dbffffffffefe1fffffffe1e1fc00007fb3fffffffffffff00fffffffe1c1e01c00f3dfffffffffffffe03ffffffe0600e00003e7ffffffffffffebc01d0ffffc0720000003e7fffffffffffa48000801ffff87e00000216fffffffffffe038000000ffffeff80000d03ffffffffffff0300000007ffffff80000b3fffffffffffff0000000001fffff8600001ffffffffffffff0000000003fffffc000001fffff7fffffffe0000000003fffff0000001ebe0effffffffc0000000003fffff000000f94e463fffffff00000000003ffff8000000f12bff7ffffff208000000001ffffc00000047017f7ffffffb10000000000ffff80000007f003ffffffff0e00000000007fff0000000ffcc3ffffffff8800000000003fc10000000fffffefffffff8000000000000f810000001ffffff5ffffff00000000000017800000003ffffdfa1ffffe80000000000003808000007ffffeff0ff7f800000000000003c81000007ffffefe07c7d000000000000000f80000007fffff780781e0800000000000001e0000007ffffff00301f080000000000000060000003fffff800301700000000000000002af00001ffffff001010000000000000000007f80001ffffff000808000000000000000007fe000000fffe00002820000000000000000fff000000fffc00001ce0000000000000010fff800000fff8000008e0400000000000000ffff00000fff00000044b780000000000000ffffc00007ff0000000001f8000000000000ffffc00007ff0000000c41a00000000000007fff800007ff0000000000000000000000007fff000007ff000000000c000000000000003fff000007ff100000003e400000000000000fff000007fe300000007fe00000000000000fff000007fc20000001fff00000000000000ffc000003fc60000003fff00000000000000ff8000003f800000003fff80000000000000ff8000003f800000003fff80000000000001fe0000001f000000003fff80000000000001fe0000001e000000003c3f80000000000001f80000000000000000000f00400000000001f80000000000000000000600200000000003e00000000000000000000000200000000003c000000000000000000002008000000000018000000000000000000000010000000000038000000000000000000000000000000000030000000000000000000000000000000000018000000000000000000000000000000000000000000000000000000000000';
+(function drawMap(){
+  let d='';
+  for(let r=0;r<56;r++) for(let c=0;c<144;c++){ const nib=parseInt(MAP[r*36+(c>>2)],16); if((nib>>(3-(c&3)))&1) d+='M'+(c*10+5)+' '+(r*10+5)+'h0' }
+  $('#land').setAttribute('d',d);
+  let g=''; for(let lon=-150;lon<=150;lon+=30){const x=(lon+180)*4; g+='<path class="grat" d="M'+x+' 0V556"/>'} [60,30,0,-30].forEach(lat=>{const y=(83-lat)*4; g+='<path class="grat" d="M0 '+y+'H1440"/>'});
+  $('#grat').innerHTML=g;
+})();
+const P=(lon,lat)=>[(lon+180)*4,(83-lat)*4];
+const PTS={hq:P(-1.5,53.8),fs:P(6,49),chi:P(-87.6,41.9),dxb:P(55.3,25.2),r1:P(139.7,35.7),r2:P(72.8,19),c2:P(-47.9,-15.8)};
+const LABELS=[
+  {k:'hq',t:'Leeds HQ · LT-0142',cls:'site',pos:''},
+  {k:'chi',t:'Chicago depot',cls:'site',pos:'below'},
+  {k:'dxb',t:'Dubai office',cls:'site',pos:'left'},
+  {k:'r1',t:'Relay 1',cls:'bad',pos:'',stage:1},
+  {k:'r2',t:'Relay 2 · mail sender',cls:'bad',pos:'below',stage:1},
+  {k:'c2',t:'Control server 203.0.113.44',cls:'bad',pos:'right',stage:3},
+];
+function arc(a,b,bend=.28){const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,dx=b[0]-a[0],dy=b[1]-a[1];const cx=mx+dy*bend,cy=my-dx*bend;return 'M'+a.join(' ')+'Q'+cx+' '+cy+' '+b.join(' ')}
+const SEGS=[
+  {id:'s1',d:arc(PTS.r1,PTS.r2,-.25),stage:1},
+  {id:'s2',d:arc(PTS.r2,PTS.hq,-.22),stage:1},
+  {id:'s3',d:arc(PTS.c2,PTS.hq,.25),stage:3},
+  {id:'s4',d:'M'+PTS.hq.join(' ')+'C'+(PTS.hq[0]+36)+' '+(PTS.hq[1]-30)+' '+(PTS.fs[0]+26)+' '+(PTS.fs[1]-40)+' '+PTS.fs.join(' '),stage:4},
+];
+(function buildPath(){
+  const g=$('#path'), sites=$('#sites'); let s='';
+  ['hq','chi','dxb'].forEach(k=>{const [x,y]=PTS[k]; s+='<g class="site"><rect x="'+(x-6)+'" y="'+(y-6)+'" width="12" height="12"/></g>'});
+  sites.innerHTML=s;
+  let h='';
+  SEGS.forEach(sg=>h+='<path class="seg" id="'+sg.id+'" d="'+sg.d+'"/>');
+  ['r1','r2','c2'].forEach(k=>{const [x,y]=PTS[k]; h+='<g class="node" data-k="'+k+'"><circle cx="'+x+'" cy="'+y+'" r="9"/></g>'});
+  h+='<g class="node" data-k="fs"><circle cx="'+PTS.fs[0]+'" cy="'+PTS.fs[1]+'" r="6"/></g>';
+  h+='<circle class="ring" id="ring" cx="'+PTS.hq[0]+'" cy="'+PTS.hq[1]+'" r="22"/>';
+  h+='<circle class="held" id="held" cx="'+PTS.hq[0]+'" cy="'+PTS.hq[1]+'" r="30"/>';
+  h+='<path class="block" id="block" d=""/>';
+  g.innerHTML=h;
+  const box=$('#mapbox');
+  LABELS.concat([{k:'fs',t:'FS-02',cls:'bad',pos:'right',stage:4}]).forEach(L=>{
+    const el=document.createElement('span'); el.className='mlabel '+L.cls+' '+(L.pos||''); el.textContent=L.t; el.dataset.stage=L.stage||0; el.setAttribute('aria-hidden','true');
+    el.style.left=(PTS[L.k][0]/1440*100)+'%'; el.style.top=(PTS[L.k][1]/560*100)+'%'; if(!L.stage) el.classList.add('on');
+    if(L.k==='hq') el.style.marginTop='-12px';
+    box.appendChild(el);
+  });
+  SEGS.forEach(sg=>{const p=$('#'+sg.id), L=p.getTotalLength(); p.style.strokeDasharray=L; p.style.strokeDashoffset=L; sg.len=L});
+  const s3=$('#s3'), L3=s3.getTotalLength(), pt=s3.getPointAtLength(L3*.78);
+  $('#block').setAttribute('d','M'+(pt.x-11)+' '+(pt.y-11)+'l22 22M'+(pt.x+11)+' '+(pt.y-11)+'l-22 22');
+})();
+function mapStage(n){
+  SEGS.forEach(sg=>{const p=$('#'+sg.id); if(sg.stage<=n&&!p.classList.contains('on')){ p.classList.add('on'); requestAnimationFrame(()=>requestAnimationFrame(()=>p.style.strokeDashoffset=0)) }});
+  $$('#path .node').forEach(nd=>{const k=nd.dataset.k; const st=k==='c2'?3:k==='fs'?4:1; nd.classList.toggle('on',n>=st)});
+  $$('#mapbox .mlabel').forEach(l=>{const st=+l.dataset.stage; if(st) l.classList.toggle('on',n>=st)});
+  $('#ring').classList.toggle('on',n>=2&&n<7);
+  $('#block').classList.toggle('on',n>=7);
+  $('#held').classList.toggle('on',n>=8);
+  if(n>=8) SEGS.forEach(sg=>$('#'+sg.id).classList.add('dead'));
+}
+function mapReset(){
+  SEGS.forEach(sg=>{const p=$('#'+sg.id); p.classList.remove('on','dead'); p.style.strokeDashoffset=sg.len});
+  mapStage(0);
+  $('#mapStep').textContent='IDLE'; $('#mapCap').textContent='No activity. Three sites monitored. Run a scan to watch an attack path.';
+}
+
+/* ---------------- the live incident ---------------- */
+const EV=[
+  {t:'09:41:07',sev:'info',tag:'INFO',src:'mail-gw',msg:'Email "Updated payroll portal" from payroll@harrow-pine.co delivered to j.okafor. Sender domain registered 4 days ago.',st:1,cap:'Phishing email arrives at Leeds HQ from a relay server.'},
+  {t:'09:42:31',sev:'low',tag:'LOW',src:'LT-0142',msg:'Excel opened the attachment. A macro started powershell.exe.',st:1,cap:'The attachment runs code on laptop LT-0142.'},
+  {t:'09:42:33',sev:'med',tag:'MED',src:'northwall',msg:'Rule NW-B112 matched: encoded PowerShell launched by an Office document. First alert.',st:2,cap:'First alert. Northwall starts watching LT-0142 closely.'},
+  {t:'09:43:10',sev:'med',tag:'MED',src:'identity',msg:'j.okafor signed in from a new network (AS64500) 39 seconds after the macro ran.',st:3,cap:'Stolen session signs in from a control server.'},
+  {t:'09:44:02',sev:'high',tag:'HIGH',src:'LT-0142',msg:'Outbound beacon to 203.0.113.44 every 60 s over HTTPS.',st:3,cap:'The laptop calls home to the control server.'},
+  {t:'09:45:18',sev:'high',tag:'HIGH',src:'FS-02',msg:'Finance share on FS-02 opened with the j.okafor session from LT-0142.',st:4,cap:'Attacker moves to file server FS-02.'},
+  {t:'09:45:19',sev:'crit',tag:'CRIT',src:'northwall',msg:'Incident INC-0417 opened. 5 signals linked: email, macro, new sign-in, beacon, file server access.',st:5,cap:'Five signals linked into one incident: INC-0417.'},
+  {t:'09:45:21',sev:'act',tag:'ACTION',src:'northwall',msg:'LT-0142 isolated from the network. The Northwall agent keeps reporting.',st:6,cap:'Laptop isolated.'},
+  {t:'09:45:22',sev:'act',tag:'ACTION',src:'identity',msg:'All j.okafor sessions revoked. Password reset required at next sign-in.',st:6,cap:'Stolen session revoked.'},
+  {t:'09:45:24',sev:'act',tag:'ACTION',src:'firewall',msg:'203.0.113.44 blocked at the edge for all three sites.',st:7,cap:'Control server blocked at every site.'},
+  {t:'09:45:40',sev:'ok',tag:'OK',src:'FS-02',msg:'No mass file changes on FS-02. Shares intact.',st:7,cap:'File server checked. Nothing encrypted.'},
+  {t:'09:46:02',sev:'ok',tag:'OK',src:'northwall',msg:'INC-0417 contained. First alert 09:42:33, last containment action 09:45:24: 2 min 51 s. Report filed.',st:8,cap:'Contained in 2 min 51 s from first alert. Report filed.'},
+];
+let runId=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function setStatus(s,txt){const el=$('#status'); el.dataset.s=s; $('#statusTxt').textContent=txt}
+function updateBadge(){const b=$('#feedBadge'); b.hidden=!S.feedNew; b.textContent=S.feedNew}
+function scrollFeed(){const f=$('#feedScroll'); f.scrollTop=f.scrollHeight}
+function feedLine(e,isNew=true){
+  const li=document.createElement('li'); if(isNew&&!reduced()) li.className='new';
+  li.innerHTML='<span class="t"></span><span class="sev '+e.sev+'"></span><span class="src"></span><span class="msg"></span>';
+  li.children[0].textContent=e.t; li.children[1].textContent=e.tag; li.children[2].textContent=e.src; li.children[3].textContent=e.msg;
+  $('#feed').appendChild(li); scrollFeed();
+  $('#feedCount').textContent=$$('#feed li:not(.divider):not(.wait)').length+' events';
+  const top=S.z[S.z.length-1]; if(top!=='feed'&&S.mode==='m'){S.feedNew++;updateBadge()}
+}
+function resetScan(){
+  runId++; S.running=false; S.done=false; S.feedNew=0; updateBadge();
+  $$('#feed .scan').forEach(n=>n.remove()); $('#feedWait').hidden=false;
+  $('#feedCount').textContent='4 events';
+  mapReset(); $('#rep').hidden=true; $('#rep').innerHTML=''; $('#repEmpty').hidden=false; $('#repPage').textContent='draft';
+  setStatus('idle','QUIET · 3 SITES WATCHED');
+}
+async function runScan(){
+  if(S.running) return 'A scan is already running. Watch the feed and the map.';
+  if(S.done) resetScan();
+  const my=++runId; S.running=true;
+  const m=S.mode==='m';
+  if(m){ openWin('feed',{focus:false}); openWin('map',{focus:false}) }
+  else { ['feed','map'].forEach(id=>{ if(!S.z.includes(id)) openWin(id,{focus:false}) }); openWin('feed',{focus:false}); openWin('map',{focus:false}) }
+  $('#feedWait').hidden=true;
+  const div=document.createElement('li'); div.className='divider scan'; div.textContent='SIMULATION STARTED · 09:41:00'; $('#feed').appendChild(div); scrollFeed();
+  setStatus('open','SIMULATION · INCIDENT IN PROGRESS');
+  simT=toS('09:41:00');
+  const gap=reduced()?280:null;
+  for(let i=0;i<EV.length;i++){
+    const e=EV[i];
+    await sleep(gap??(i===0?500:(e.sev==='act'?650:1150)));
+    if(my!==runId) return;
+    simT=toS(e.t); clock.textContent='SIM '+e.t;
+    feedLine(e); $('#feed').lastChild.classList.add('scan');
+    mapStage(e.st);
+    $('#mapStep').textContent='STEP '+String(i+1).padStart(2,'0')+'/'+EV.length;
+    $('#mapCap').textContent=e.cap;
+    if(e.st===6&&i===7) setStatus('open','SIMULATION · CONTAINING');
+  }
+  await sleep(reduced()?200:700); if(my!==runId) return;
+  setStatus('done','SIMULATION · CONTAINED');
+  S.running=false; S.done=true;
+  openWin('report',{focus:false});
+  await writeReport(my);
+  return null;
+}
+
+/* ---------------- report that writes itself ---------------- */
+function money(n){const cur=$('#c-cur').value; try{return new Intl.NumberFormat(cur==='AED'?'en-AE':cur==='GBP'?'en-GB':cur==='AUD'?'en-AU':'en-US',{style:'currency',currency:cur,maximumFractionDigits:0}).format(n)}catch(_){return cur+' '+Math.round(n).toLocaleString()}}
+function reportModel(){
+  const c=calc();
+  return [
+    ['p.kicker','Report INC-0417 · simulated · filed 09:46:05 by Northwall'],
+    ['p.title','Phishing to lateral movement, contained'],
+    ['dl',[['Company','Harrow & Pine Logistics (fictional), 240 staff'],['Severity','High'],['Status','CONTAINED'],['Time to contain','2 min 51 s from first alert'],['Files lost','None']]],
+    ['h3','What happened'],
+    ['p.prose','A payroll-themed email carried a macro that started PowerShell on laptop LT-0142. The attacker used the stolen session to sign in from outside and open the finance share on FS-02. Northwall linked five separate signals into one incident and contained it before any file was changed.'],
+    ['h3','Timeline'],
+    ['table',EV.filter(e=>['med','high','crit','act','ok'].includes(e.sev)||e.src==='mail-gw').map(e=>[e.t,e.msg.split('. ')[0].replace(/\.$/,'')+'.'])],
+    ['h3','Actions Northwall took'],
+    ['ol',['Isolated LT-0142 from the network at 09:45:21.','Revoked every j.okafor session and forced a password reset at 09:45:22.','Blocked 203.0.113.44 at all three sites at 09:45:24.']],
+    ['h3','For your team'],
+    ['ol',['Reimage LT-0142 before it rejoins the network.','Block the lookalike domain harrow-pine.co for all users.','Tell j.okafor what happened. Nobody is in trouble.']],
+    ['h3','Business impact'],
+    ['impact','Downtime: 0 hours. At your inputs in Downtime cost, '+c.hrs+' hours down would have cost about '+money(c.total)+'.'],
+  ];
+}
+async function typeText(el,text,my){
+  if(reduced()){ el.textContent=text; return }
+  el.classList.add('caret');
+  for(let i=0;i<=text.length;i+=3){ if(my!==runId) return; el.textContent=text.slice(0,i); await sleep(8) }
+  el.textContent=text; el.classList.remove('caret');
+}
+async function writeReport(my){
+  const rep=$('#rep'); rep.innerHTML=''; rep.hidden=false; $('#repEmpty').hidden=true; $('#repPage').textContent='writing';
+  const sc=$('#repScroll'); sc.scrollTop=0;
+  const follow=()=>{ if(!reduced()) sc.scrollTop=sc.scrollHeight };
+  for(const [kind,val] of reportModel()){
+    if(my!==runId) return;
+    const [tag,cls]=kind.split('.');
+    if(tag==='dl'){
+      const dl=document.createElement('dl'); rep.appendChild(dl);
+      for(const [k,v] of val){ const dt=document.createElement('dt'), dd=document.createElement('dd'); dt.textContent=k; dl.append(dt,dd); if(v==='CONTAINED') dd.className='ok'; await typeText(dd,v,my); }
+    } else if(tag==='table'){
+      const w=document.createElement('div'); w.className='tablewrap'; const t=document.createElement('table'); w.appendChild(t); rep.appendChild(w);
+      const cap=document.createElement('caption'); cap.className='sr'; cap.textContent='Incident timeline, simulated times'; t.appendChild(cap);
+      for(const [a,b] of val){ const tr=t.insertRow(); tr.insertCell().textContent=a; const td=tr.insertCell(); await typeText(td,b,my); follow() }
+    } else if(tag==='ol'){
+      const ol=document.createElement('ol'); rep.appendChild(ol);
+      for(const x of val){ const li=document.createElement('li'); ol.appendChild(li); await typeText(li,x,my); follow() }
+    } else if(tag==='impact'){
+      const p=document.createElement('p'); p.className='impact'; rep.appendChild(p); await typeText(p,val,my);
+    } else {
+      const el=document.createElement(tag); if(cls) el.className=cls; rep.appendChild(el); await typeText(el,val,my);
+    }
+    follow();
+  }
+  if(my!==runId) return;
+  const end=document.createElement('div'); end.className='endrow';
+  end.innerHTML='<p class="small" style="margin:0 0 10px">This report was written by Northwall in the simulation you just watched. A security review shows what it would find in your company.</p><div class="row"><button class="btn solid" type="button" data-open="book">Book a security review</button><button class="btn" type="button" data-cmd="scan">Run again</button></div>';
+  rep.appendChild(end); follow();
+  $('#repPage').textContent='filed · 1 page';
+}
+
+/* ---------------- downtime cost ---------------- */
+const num=(id,def)=>{const v=parseFloat($('#'+id).value);return isFinite(v)&&v>=0?v:def};
+function calc(){
+  const emp=Math.round(num('c-emp',0)), rev=num('c-rev',0), hrs=num('c-hrs',0), wage=num('c-wage',0);
+  const lost=rev*hrs, idle=emp*hrs*wage, total=lost+idle;
+  return {emp,rev,hrs,wage,lost,idle,total};
+}
+function renderCalc(){
+  const c=calc();
+  $('#costLead').textContent=(c.hrs===1?'1 hour':c.hrs+' hours')+' down would cost about';
+  $('#costTotal').textContent=money(c.total);
+  $('#costRev').textContent=money(c.lost); $('#costIdle').textContent=money(c.idle);
+  const mx=Math.max(c.lost,c.idle,1);
+  $('#barRev').style.width=(c.lost/mx*100)+'%'; $('#barIdle').style.width=(c.idle/mx*100)+'%';
+  $$('.est').forEach(e=>{const r=+e.dataset.rate; e.textContent='About $'+(r*Math.max(c.emp,50)).toLocaleString('en-US')+' / month at '+Math.max(c.emp,50)+' staff'});
+  $('#estNote').firstChild.textContent='Estimates use '+c.emp+' employees from the Downtime cost worksheet'+(c.emp<50?' (50 seat minimum)':'')+'. ';
+  const imp=$('#rep .impact'); if(imp&&S.done&&!imp.classList.contains('caret')) imp.textContent='Downtime: 0 hours. At your inputs in Downtime cost, '+c.hrs+' hours down would have cost about '+money(c.total)+'.';
+}
+$('#calc').addEventListener('input',renderCalc);
+
+/* ---------------- booking form ---------------- */
+(function weeks(){
+  const sel=$('#b-week'); const d=new Date(); d.setHours(12); const day=d.getDay(); d.setDate(d.getDate()+((8-day)%7||7));
+  for(let i=0;i<3;i++){ const o=document.createElement('option'); o.textContent='Week of '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); sel.appendChild(o); d.setDate(d.getDate()+7) }
+})();
+$('#book').addEventListener('submit',e=>{
+  e.preventDefault();
+  const f=e.target, name=f.name.value.trim(), email=f.email.value.trim(), co=f.company.value.trim();
+  const errs=[]; if(!name) errs.push('your name'); if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errs.push('a work email like you@company.com'); if(!co) errs.push('your company');
+  [['b-name',!name],['b-email',!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)],['b-co',!co]].forEach(([id,bad])=>$('#'+id).setAttribute('aria-invalid',String(bad)));
+  if(errs.length){ $('#bookErr').textContent='Add '+errs.join(', ')+' to book.'; ($('[aria-invalid="true"]',f)||f).focus(); return }
+  $('#bookErr').textContent='';
+  const done=$('#bookDone');
+  done.innerHTML='<b>Request recorded · '+f.week.value.replace(/</g,'')+'</b>';
+  done.append(document.createTextNode('Thanks, '+name+'. On a live site a Northwall engineer would reply to '+email+' within one business day to set a time for '+co+'. This is a concept site, so nothing was sent.'));
+  f.hidden=true; done.hidden=false; done.focus();
+  say('book','Review request recorded for '+co+'. Concept site: nothing was sent.');
+});
+
+/* ---------------- command bar ---------------- */
+const CMDS={
+  help:'List commands',scan:'Run a simulated attack and watch it get contained',pricing:'Open pricing',book:'Book a security review',
+  cost:'Open the downtime calculator. Also: cost 240 9000 16',readme:'Open the readme',feed:'Open the detection feed',map:'Open the attack map',report:'Open the incident report',
+  close:'Close the top window. Also: close all',tile:'Put windows back in their places',reset:'Clear the simulation',clear:'Clear this output'
+};
+const ALIAS={demo:'scan',simulate:'scan',attack:'scan',run:'scan',price:'pricing',prices:'pricing',plans:'pricing',review:'book',call:'book',meeting:'book',contact:'book',calculator:'cost',downtime:'cost',roi:'cost',about:'readme',info:'readme',events:'feed',log:'feed',incident:'report','?':'help',ls:'help'};
+const hist=[]; let hi=0;
+function showSlip(){ $('#slip').hidden=false }
+function hideSlip(){ $('#slip').hidden=true }
+function say(echo,out){
+  const log=$('#slipLog');
+  const a=document.createElement('div'); a.className='echo'; a.textContent=echo;
+  const b=document.createElement('div'); b.className='out';
+  if(out instanceof Node) b.appendChild(out); else b.textContent=out;
+  log.append(a,b); while(log.children.length>12) log.firstChild.remove();
+  showSlip(); const s=$('#slip'); s.scrollTop=s.scrollHeight;
+}
+function helpNode(){
+  const frag=document.createDocumentFragment();
+  Object.entries(CMDS).forEach(([k,v])=>{ const line=document.createElement('div'); const b=document.createElement('button'); b.type='button'; b.className='lnk'; b.textContent=k.padEnd(8,' '); b.dataset.cmd=k; b.style.whiteSpace='pre'; line.append(b,document.createTextNode('  '+v)); frag.appendChild(line) });
+  return frag;
+}
+function run(raw,{echo=true}={}){
+  const text=raw.trim().toLowerCase(); if(!text) return;
+  const parts=text.split(/\s+/); let c=parts[0]; if(c==='open'&&parts[1]){ c=parts[1] } c=ALIAS[c]||c;
+  if(parts.slice(0,2).join(' ')==='book a'||text.startsWith('book a review')) c='book';
+  const reply=m=>echo&&say(raw.trim(),m);
+  const focusWin=!document.activeElement||document.activeElement.id!=='cmd';
+  switch(c){
+    case 'help': reply(helpNode()); break;
+    case 'scan': { if(S.running){ reply('A scan is already running. Watch the feed and the map.'); break }
+      reply('Simulated attack on Harrow & Pine Logistics (fictional). Watch the feed and the map.'); runScan(); break }
+    case 'cost': {
+      const n=parts.slice(1).map(Number).filter(x=>isFinite(x)&&x>=0);
+      if(n.length){ if(n[0]!=null) $('#c-emp').value=Math.round(n[0]); if(n[1]!=null) $('#c-rev').value=n[1]; if(n[2]!=null) $('#c-hrs').value=n[2]; renderCalc(); openWin('cost',{focus:false}); reply('Worksheet updated: '+$('#costLead').textContent+' '+$('#costTotal').textContent+'.') }
+      else { openWin('cost',{focus:focusWin}); reply('Downtime cost is open. Or type: cost <employees> <revenue per hour> <hours down>') }
+      break }
+    case 'readme': case 'feed': case 'map': case 'report': case 'pricing': case 'book':
+      openWin(c,{focus:focusWin}); reply(NAMES[c]+' is open.'+(c==='book'?' Fill in three fields and you are done.':'')); break;
+    case 'close': {
+      if(parts[1]==='all'){ [...S.z].forEach(id=>closeWin(id)); reply('All windows closed. Type readme to start again.'); break }
+      const id=parts[1]?(ALIAS[parts[1]]||parts[1]):S.z[S.z.length-1];
+      if(id&&S.z.includes(id)){ closeWin(id); reply(NAMES[id]+' closed.') } else reply('Nothing to close.');
+      break }
+    case 'tile': setMode(true); reply('Windows put back.'); break;
+    case 'reset': resetScan(); reply('Simulation cleared. Type scan to run it again.'); break;
+    case 'clear': $('#slipLog').innerHTML=''; hideSlip(); break;
+    default: {
+      const near=Object.keys(CMDS).find(k=>k.startsWith(c.slice(0,2)));
+      reply('Unknown command "'+parts[0]+'".'+(near?' Did you mean '+near+'?':'')+' Type help for the list.');
+    }
+  }
+}
+const inp=$('#cmd');
+$('#cmdform').addEventListener('submit',e=>{ e.preventDefault(); const v=inp.value; if(!v.trim()) return; hist.push(v); hi=hist.length; inp.value=''; run(v) });
+inp.addEventListener('keydown',e=>{
+  if(e.key==='Tab'&&inp.value.trim()&&!e.shiftKey){ const v=inp.value.trim().toLowerCase(); const m=Object.keys(CMDS).filter(k=>k.startsWith(v)); if(m.length===1){ e.preventDefault(); inp.value=m[0]+' ' } else if(m.length>1){ e.preventDefault(); say(v+' ⇥',m.join('   ')) } }
+  else if(e.key==='ArrowUp'&&hist.length){ e.preventDefault(); hi=Math.max(0,hi-1); inp.value=hist[hi] }
+  else if(e.key==='ArrowDown'&&hist.length){ e.preventDefault(); hi=Math.min(hist.length,hi+1); inp.value=hist[hi]||'' }
+});
+$('#slipX').addEventListener('click',()=>{ hideSlip(); inp.focus() });
+
+/* ---------------- resize: ignore address-bar height jiggle ---------------- */
+let rt;
+addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{
+  const w=innerWidth,h=innerHeight;
+  if(w===S.lastW&&Math.abs(h-S.lastH)<160){ if(S.mode==='d'){ S.z.forEach(id=>S.rect[id]=clampRect(S.rect[id])); render() } return }
+  S.lastW=w; S.lastH=h; setMode(false);
+},90) });
+
+/* ---------------- boot ---------------- */
+S.lastW=innerWidth; S.lastH=innerHeight;
+computeMode(); S.mode=root.classList.contains('m')?'m':'d';
+{const {w,h}=deskSize(); S.shape=w/h>1.15?'wide':'tall'}
+['feed','map','readme'].forEach(id=>{ S.rect[id]=defaultRect(id); S.z.push(id) });
+S.tabs=['readme','map','feed'];
+renderCalc(); render();
+})();
+</script>
+</body>
+</html>
