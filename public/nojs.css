@@ -1,0 +1,37 @@
+/* Loaded only inside <noscript>: the deck becomes one linear page of cards.
+   !important because the main stylesheet is injected after this link. */
+html,
+body {
+    height: auto !important;
+    overflow: auto !important;
+}
+.app {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+.index,
+.log,
+.kbd,
+.ctrl,
+.js-only {
+    display: none !important;
+}
+.deck {
+    display: block !important;
+    padding: 16px !important;
+}
+.stage {
+    height: auto !important;
+    padding: 0 !important;
+    display: grid !important;
+    gap: 16px !important;
+    margin: 0 auto !important;
+}
+.card {
+    position: static !important;
+    transform: none !important;
+}
+.cbody {
+    overflow: visible !important;
+}

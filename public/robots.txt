@@ -18,4 +18,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: __SITE_URL__/sitemap.xml
+Sitemap: https://northwall-6kceu2.v2.appdeploy.ai/sitemap.xml

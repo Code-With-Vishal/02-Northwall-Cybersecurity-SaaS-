@@ -315,12 +315,12 @@ button{cursor:pointer}
 }
 
 /* ---------- no-JS fallback: one linear page of cards ---------- */
-html:not(.js) body{overflow:auto}
-html:not(.js) .app{display:block;height:auto}
-html:not(.js) .index,html:not(.js) .log,html:not(.js) .kbd,html:not(.js) .ctrl,html:not(.js) .js-only{display:none!important}
-html:not(.js) .stage{height:auto;padding:0;display:grid;gap:16px;margin:0 auto}
-html:not(.js) .card{position:static;transform:none!important}
-html:not(.js) .deck{display:block;padding:16px}
+html.no-js body{overflow:auto}
+html.no-js .app{display:block;height:auto}
+html.no-js .index,html.no-js .log,html.no-js .kbd,html.no-js .ctrl,html.no-js .js-only{display:none!important}
+html.no-js .stage{height:auto;padding:0;display:grid;gap:16px;margin:0 auto}
+html.no-js .card{position:static;transform:none!important}
+html.no-js .deck{display:block;padding:16px}
 
 @media (prefers-reduced-motion:reduce){
   .card{transition:opacity .2s linear!important}
