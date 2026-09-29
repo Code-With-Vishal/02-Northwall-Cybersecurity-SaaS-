@@ -1,0 +1,67 @@
+[
+  {
+    "name": "Work the alert shift and see the linked incident",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "deck navigation with Start the shift and First alert buttons",
+      "escalate and dismiss decisions on alert cards",
+      "shift log records each decision",
+      "What Northwall saw result card with score"
+    ],
+    "description": "Verifies a visitor can triage all ten alert cards and reach the result card that scores their decisions.",
+    "steps": [
+      "Click the \"Start the shift\" button below the card",
+      "Click the \"First alert\" button",
+      "Click \"Escalate\" five times and \"Dismiss\" five times, alternating, until the ten alert cards are done"
+    ],
+    "expected": "A card titled \"What Northwall saw\" is shown with a score in the form \"N / 5\" and a green box reading \"5 / 5\"; the chapter list shows \"Your shift 10/10\"."
+  },
+  {
+    "name": "Incident report writes itself and links to booking",
+    "viewport": "desktop",
+    "covers": [
+      "self-writing incident report",
+      "report cost line uses calculator inputs",
+      "report call to action opens the booking card"
+    ],
+    "description": "Verifies the incident report card finishes writing and its button opens the booking card.",
+    "steps": [
+      "Click \"Incident report\" in the chapter list",
+      "Wait until the card header reads \"filed\"",
+      "Click the \"Book a security review\" button inside the report card"
+    ],
+    "expected": "The report shows a \"Business impact\" section mentioning \"$316,800\", and after the click the card titled \"Book a security review\" with a \"Your name\" field is shown."
+  },
+  {
+    "name": "Downtime calculator updates from visitor inputs",
+    "viewport": "mobile",
+    "covers": [
+      "downtime cost calculator",
+      "pricing estimate uses calculator headcount",
+      "mobile chapter chips"
+    ],
+    "description": "Verifies changing calculator inputs updates the total and the pricing estimate on mobile.",
+    "steps": [
+      "Tap the \"Downtime cost\" chip at the top",
+      "Set Employees to 100, Revenue per hour to 5000 and Hours down to 10",
+      "Tap the \"Pricing\" chip"
+    ],
+    "expected": "The downtime total reads $95,000 before switching, and the Pricing card shows \"About $900 / month at 100 staff\" for the Watch + Respond plan."
+  },
+  {
+    "name": "Booking form rejects missing details",
+    "viewport": "mobile",
+    "covers": [
+      "booking form validation",
+      "booking form confirmation"
+    ],
+    "description": "Verifies the booking form blocks an empty submit and confirms a complete one.",
+    "steps": [
+      "Tap the \"Book a review\" button in the header",
+      "Tap \"Request my review\" with all fields empty",
+      "Fill Your name \"Sam Lee\", Work email \"sam@example.com\", Company \"Acme Freight\" and tap \"Request my review\" again"
+    ],
+    "expected": "The first submit shows a message starting \"Add your name\"; the second shows \"Request recorded\" and the text \"Thanks, Sam Lee\"."
+  }
+]

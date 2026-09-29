@@ -1,0 +1,28 @@
+# Northwall
+
+> Northwall is a concept brand for threat detection and response, built for companies of 50 to 500 people with a small IT team and no night shift. This site is a design concept. The company, its customers and the incident shown are fictional.
+
+## What Northwall does
+
+- Watches laptops, servers, email, sign-ins and cloud apps from one console.
+- Joins related alerts into one incident, so a small team reads one story instead of a pile of alerts.
+- When an attack is confirmed, isolates the device, revokes the session and blocks the address.
+- Ends every incident with a written report leadership and insurers can read.
+
+## The demo on this site
+
+Visitors work a simulated 10-alert shift at Harrow & Pine Logistics (fictional, 240 staff). Five alerts are one attack: a phishing email, a macro, a stolen sign-in, a beacon to a control server, and access to a finance file share. The site then shows how Northwall linked the five into incident INC-0417 and contained it 2 min 51 s after the first alert (simulated times).
+
+## Pricing (concept, USD, per employee per month, billed annually)
+
+- Watch: $5. Detection and linked incidents; alerts to email, Slack or Teams.
+- Watch + Respond: $9. Adds automatic containment and a written report for every incident.
+- Managed: $14. Adds Northwall analysts on call around the clock and a quarterly review.
+
+## Next step
+
+Book a free 45-minute security review from the "Book a review" card on the home page. On this concept site the form does not send data.
+
+## Not claimed
+
+No certifications, customer names or performance statistics are claimed. Compliance status is marked for verification.

@@ -1,347 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Northwall Triage Deck</title>
-<meta name="description" content="Northwall: threat detection and response for 50 to 500 person companies. Work a simulated shift of ten alerts and see what Northwall links together.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,300..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-<style>
-/* Layout: a triage table. One deck of cards in the middle, chapter index left, your shift log right, controls under the deck. No page scroll. */
-:root{
-  --table:#0E4A43;      /* petrol dispatch table */
-  --on-table:#EAF3EF;
-  --on-table-2:#A9C9C0;
-  --on-table-line:rgba(234,243,239,.32);
-  --on-table-hover:rgba(234,243,239,.09);
-  --card:#F6F7F2;
-  --paper:#FFFFFF;
-  --ink:#0E1F1C;
-  --ink-2:#4A5A56;
-  --rule:#D8DDD7;
-  --signal:#F5B82E;     /* alert amber: fills only, ink text on it */
-  --signal-ink:#8A5A00; /* alert text on card */
-  --signal-wash:#FDF0CF;
-  --safe:#1F7A5C;       /* contained */
-  --safe-ink:#FFFFFF;
-  --safe-wash:#DDEFE6;
-  --shadow:0 1px 0 rgba(4,20,18,.25),0 26px 40px -22px rgba(4,20,18,.8);
-  --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
-  --sans:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;
-  color-scheme:light;
-}
-*,*::before,*::after{box-sizing:border-box}
-[hidden]{display:none!important}
-html,body{height:100%;overflow:hidden}
-body{margin:0;background:var(--table);color:var(--on-table);font:400 15px/1.5 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-button,input,select,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
-.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.verify{font:500 11px/1.4 var(--mono);color:var(--ink-2);border:1px dashed var(--ink-2);padding:0 5px;white-space:nowrap}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Northwall | Threat detection for small IT teams</title>
+    <meta name="description" content="Northwall links small security alerts into one incident and contains it in seconds. Built for 50 to 500 person companies. Try a 10-alert shift.">
+    <link rel="canonical" href="__SITE_URL__/">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0E4A43">
+    <meta name="color-scheme" content="light">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-Du+OJKJSbdUgz5nrHeWWINvez6XKDDU/tyj/5c2uvwo='; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 
-/* ---------- shell ---------- */
-.app{height:100%;overflow:clip;display:grid;grid-template-columns:230px minmax(0,1fr) 270px;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"head head head" "index deck log" "foot ctrl kbd";
-  background:var(--table);}
-.head{grid-area:head;display:flex;align-items:center;gap:16px;padding:14px 24px;min-width:0}
-.mark{display:flex;align-items:center;gap:10px;font:800 17px/1 var(--display);font-stretch:100%;letter-spacing:.04em;white-space:nowrap}
-.mark svg{flex:none}
-.head .tag{font:500 12px/1.3 var(--mono);color:var(--on-table-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.head .sp{flex:1}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border:0;border-radius:999px;font:600 13px/1 var(--sans);white-space:nowrap;text-decoration:none}
-.btn.card-c{background:var(--card);color:var(--ink)}
-.btn.card-c:hover{background:var(--paper)}
-.btn.ink{background:var(--ink);color:var(--card)}
-.btn.ink:hover{opacity:.88}
-.btn.line{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--ink)}
-.btn.line:hover{background:var(--rule)}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Northwall">
+    <meta property="og:title" content="Northwall: see the attack before it lands">
+    <meta property="og:description" content="Work a 10-alert triage shift. Five of the alerts are one attack. See what Northwall links together and how fast it contains it.">
+    <meta property="og:url" content="__SITE_URL__/">
+    <meta property="og:image" content="__SITE_URL__/og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Northwall. See the attack before it lands. A deck of security alert cards on a petrol green table.">
+    <meta property="og:locale" content="en_GB">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Northwall: see the attack before it lands">
+    <meta name="twitter:description" content="Work a 10-alert triage shift and see what Northwall links together.">
+    <meta name="twitter:image" content="__SITE_URL__/og.jpg">
 
-/* chapter index */
-.index{grid-area:index;padding:12px 16px 12px 24px;min-width:0}
-.index h2,.log h2{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--on-table-2);margin:8px 0 12px}
-.index ol{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-.index button{width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:baseline;gap:6px;text-align:left;border:0;background:none;color:var(--on-table);padding:9px 10px;border-radius:8px;font:500 14px/1.2 var(--sans)}
-.index button:hover{background:var(--on-table-hover)}
-.index button[aria-current="true"]{background:var(--card);color:var(--ink)}
-.index .n{font:500 11px/1 var(--mono);opacity:.7}
-.index .c{font:500 11px/1 var(--mono);opacity:.8;font-variant-numeric:tabular-nums}
-.foot{grid-area:foot;align-self:end;padding:0 16px 16px 24px;margin:0;font:400 11px/1.4 var(--mono);color:var(--on-table-2)}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
 
-/* shift log */
-.log{grid-area:log;padding:12px 24px 12px 12px;min-width:0;display:flex;flex-direction:column;min-height:0}
-.log ol{list-style:none;margin:0;padding:0;display:grid;gap:6px;overflow:auto;min-height:0}
-.log li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline;font:400 12px/1.35 var(--mono);color:var(--on-table);padding:6px 0;border-bottom:1px solid var(--on-table-hover)}
-.log li .t{color:var(--on-table-2);font-variant-numeric:tabular-nums}
-.log li .d{font-weight:600;font-size:10.5px;letter-spacing:.08em;padding:2px 6px;border-radius:4px}
-.log li .d.esc{background:var(--signal);color:var(--ink)}
-.log li .d.dis{box-shadow:inset 0 0 0 1px var(--on-table-2);color:var(--on-table-2)}
-.log .empty{font:400 12px/1.5 var(--mono);color:var(--on-table-2);margin:0}
-.kbd{grid-area:kbd;align-self:end;padding:0 24px 18px 12px;margin:0;font:400 11px/1.7 var(--mono);color:var(--on-table-2)}
-.kbd kbd{font:inherit;border:1px solid var(--on-table-line);border-radius:4px;padding:0 5px;color:var(--on-table)}
-
-/* ---------- deck ---------- */
-.deck{grid-area:deck;position:relative;min-height:0;display:grid;place-items:center;padding:8px 16px 0}
-.stage{position:relative;width:min(520px,100%);height:min(100%,640px);padding-top:26px}
-.stage:focus{outline:none}
-.stage:focus-visible{outline:none}
-.stage:focus-visible .card.top{box-shadow:0 0 0 3px var(--table),0 0 0 5px var(--on-table),var(--shadow)}
-.card{position:absolute;left:0;right:0;top:26px;bottom:0;background:var(--card);color:var(--ink);border-radius:16px;
-  box-shadow:var(--shadow);
-  display:flex;flex-direction:column;overflow:hidden;touch-action:pan-y;transform-origin:50% 90%;
-  transition:transform .32s cubic-bezier(.2,.8,.2,1),opacity .32s}
-.card.dragging{transition:none;cursor:grabbing}
-.card.top{cursor:grab}
-.ctab{flex:none;display:flex;justify-content:space-between;align-items:center;gap:var(--s3);padding:var(--s3) var(--s5);border-bottom:1px solid var(--rule);font:500 11px/1.2 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
-.ctab b{color:var(--ink);font-weight:600}
-.ctab .simu{color:var(--signal-ink)}
-.cbody{flex:1;min-height:0;overflow:auto;padding:var(--s5) var(--s5) var(--s6);overscroll-behavior:contain;container-type:inline-size}
-.kick{font:500 11px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);margin:0 0 12px}
-.h{font:800 clamp(28px,6.2cqi,46px)/1 var(--display);font-stretch:100%;letter-spacing:-.02em;margin:0 0 var(--s4);text-wrap:balance}
-.h.m{font-size:clamp(22px,4.8cqi,32px);font-stretch:100%}
-.lead{font-size:17px;line-height:1.5;margin:0 0 var(--s4);max-width:52ch}
-.p{margin:0 0 var(--s3);max-width:60ch}
-.small{font:400 12px/1.55 var(--mono);color:var(--ink-2)}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-
-/* cover */
-.cover .cbody{display:flex;flex-direction:column;gap:var(--s5)}
-.cover .waiting{margin-top:auto}
-.cover .h{font-size:clamp(38px,10.5cqi,72px);font-stretch:100%;line-height:.94}
-.cover .h span{display:block;font-stretch:75%;font-weight:600}
-.waiting{display:flex;align-items:center;gap:var(--s4);border-top:1.5px solid var(--ink);padding-top:var(--s4)}
-.fan{position:relative;height:112px;margin:var(--s2) 0 0}
-.ft{position:absolute;left:50%;top:0;width:min(300px,78%);display:grid;grid-template-columns:auto 1fr;gap:var(--s1) var(--s2);align-items:center;padding:var(--s3);border-radius:10px;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink),0 8px 16px -10px rgba(4,20,18,.5);font:400 12px/1.35 var(--mono);transform-origin:50% 120%}
-.ft span:last-child{grid-column:1/-1;font:500 13px/1.35 var(--sans);color:var(--ink)}
-.ft .sev{padding:3px 6px;font-size:10px}
-.ft:nth-child(1){transform:translate(-50%,0) scale(.88);opacity:.9}
-.ft:nth-child(2){transform:translate(-50%,13px) scale(.94)}
-.ft:nth-child(3){transform:translate(-50%,28px);box-shadow:inset 0 0 0 1.5px var(--ink),inset 6px 0 0 var(--signal),0 10px 18px -10px rgba(4,20,18,.6);padding-left:20px}
-.ft:nth-child(-n+2) span:last-child{visibility:hidden}
-@media (max-height:700px){.fan{display:none}}
-.minideck{position:relative;width:46px;height:34px;flex:none}
-.minideck i{position:absolute;inset:0;border-radius:4px;background:var(--card);box-shadow:inset 0 0 0 1.5px var(--ink)}
-.minideck i:nth-child(1){transform:translate(6px,-6px)}
-.minideck i:nth-child(2){transform:translate(3px,-3px)}
-.minideck i:nth-child(3){background:var(--signal)}
-
-/* readme */
-.lines{list-style:none;margin:0 0 18px;padding:0;counter-reset:l}
-.lines li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px;padding:10px 0;border-bottom:1px solid var(--rule);font-size:16px;line-height:1.45}
-.lines li::before{counter-increment:l;content:counter(l);font:500 11px/1.9 var(--mono);color:var(--ink-2)}
-
-/* how-to */
-.how{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
-.how div{border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.4}
-.how b{display:block;font:700 15px/1.2 var(--display);font-stretch:100%;margin-bottom:4px}
-.how .l{box-shadow:inset 0 0 0 1.5px var(--ink-2)}
-.how .r{background:var(--signal)}
-
-/* alert cards */
-.alert .cbody{padding-left:30px;position:relative;display:flex;flex-direction:column}
-.alert .stripe{position:absolute;left:0;top:0;bottom:0;width:8px;background:var(--rule)}
-.alert[data-sev="med"] .stripe{background:var(--ink)}
-.alert[data-sev="high"] .stripe{background:var(--signal)}
-.sevrow{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-.sev{font:600 11px/1 var(--mono);letter-spacing:.1em;padding:5px 8px;border-radius:4px;box-shadow:inset 0 0 0 1.5px var(--ink-2);color:var(--ink-2)}
-.sev.med{box-shadow:inset 0 0 0 1.5px var(--ink);color:var(--ink)}
-.sev.high{background:var(--signal);box-shadow:none;color:var(--ink)}
-.atime{font:500 13px/1 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
-.asrc{font:600 13px/1.3 var(--mono);margin:0 0 8px}
-.amsg{font:500 clamp(19px,4.6cqi,25px)/1.3 var(--sans);margin:0 0 20px;text-wrap:pretty}
-.actx{margin:0;display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;font:400 12.5px/1.45 var(--mono);border-top:1px solid var(--rule);padding-top:14px}
-.actx dt{color:var(--ink-2)}
-.actx dd{margin:0}
-.ask{margin:auto 0 0;padding-top:20px;display:flex;justify-content:space-between;gap:10px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
-.ask span:last-child{color:var(--signal-ink)}
-.stampx{position:absolute;top:46%;font:800 26px/1 var(--display);font-stretch:100%;letter-spacing:.06em;padding:6px 12px;border-radius:8px;opacity:0;pointer-events:none;z-index:3}
-.stampx.esc{left:22px;transform:rotate(-10deg);background:var(--signal);color:var(--ink)}
-.stampx.dis{right:22px;transform:rotate(9deg);box-shadow:inset 0 0 0 3px var(--ink-2);color:var(--ink-2);background:var(--card)}
-.decided{margin:14px 0 0;font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
-
-/* result: the thread */
-.tixwrap{position:relative;margin:4px 0 22px}
-.tix{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px 10px;position:relative;z-index:1}
-.tk{border-radius:8px;background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);padding:8px 8px 9px;font:400 10.5px/1.3 var(--mono);min-width:0;transition:box-shadow .3s,background .3s,opacity .3s}
-.tk .tt{display:block;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.tk .ts{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tk .ty{display:inline-block;margin-top:5px;font-size:9.5px;letter-spacing:.06em;padding:2px 5px;border-radius:3px}
-.tk .ty.esc{background:var(--signal);color:var(--ink)}
-.tk .ty.dis{box-shadow:inset 0 0 0 1px var(--ink-2);color:var(--ink-2)}
-.tk .ty.none{color:var(--ink-2)}
-.shown .tk.real{box-shadow:inset 0 0 0 2px var(--ink);background:var(--signal-wash)}
-.shown .tk.noise{color:var(--ink-2);background:var(--card)}
-.shown .tk.noise .ts{font-weight:400}
-.thread{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:visible}
-.thread path{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.thread.dots{z-index:2}
-.thread circle{fill:var(--signal);stroke:var(--ink);stroke-width:2}
-@container (max-width:430px){.tix{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.score{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.score div{border-radius:10px;padding:12px 14px;box-shadow:inset 0 0 0 1.5px var(--ink)}
-.score .nw{background:var(--safe);box-shadow:none;color:var(--safe-ink)}
-.score b{display:block;font:800 30px/1 var(--display);font-stretch:100%;margin-bottom:6px;font-variant-numeric:tabular-nums}
-.score span{font-size:13.5px;line-height:1.35;display:block}
-
-/* report */
-.rep h3{font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;margin:20px 0 8px;padding-bottom:6px;border-bottom:1.5px solid var(--ink)}
-.rep dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 16px;margin:0;font:400 12.5px/1.45 var(--mono)}
-.rep dt{color:var(--ink-2)}
-.rep dd{margin:0}
-.rep .ok{color:var(--safe);font-weight:600}
-.rep table{width:100%;border-collapse:collapse;font:400 12px/1.4 var(--mono)}
-.rep th{text-align:left;font-weight:500;color:var(--ink-2);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:0 8px 6px 0}
-.rep td{padding:6px 8px 6px 0;border-top:1px solid var(--rule);vertical-align:top}
-.rep td:first-child{white-space:nowrap;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.rep td.you{white-space:nowrap;font-size:10.5px;letter-spacing:.06em}
-.rep td.you.esc{color:var(--signal-ink);font-weight:600}
-.rep ol{margin:0;padding-left:20px}
-.rep ol li{margin-bottom:4px}
-.impact{border-radius:10px;background:var(--safe-wash);box-shadow:inset 0 0 0 1.5px var(--safe);padding:12px 14px;font:500 14px/1.5 var(--sans);margin:6px 0 0}
-.tablewrap{overflow-x:auto}
-.caret::after{content:"";display:inline-block;width:.5em;height:1em;background:var(--ink);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
-@keyframes nudge{0%,100%{transform:none}30%{transform:translateX(34px) rotate(2.4deg)}55%{transform:translateX(-10px) rotate(-.6deg)}75%{transform:translateX(4px)}}
-.card.nudge{animation:nudge 1.1s cubic-bezier(.3,.7,.3,1) 1}
-.card.nudge .stampx.esc{animation:ghost 1.1s ease 1}
-@keyframes ghost{0%,100%{opacity:0}30%{opacity:.55}}
-.endrow{margin-top:20px;padding-top:16px;border-top:1.5px solid var(--ink)}
-
-/* cost */
-.calc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;margin-bottom:18px}
-.field{display:grid;gap:5px;min-width:0}
-.field label{font:500 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
-.field input,.field select,.field textarea{width:100%;min-width:0;height:44px;border:0;border-radius:8px;box-shadow:inset 0 0 0 1.5px var(--ink);background:var(--paper);padding:0 12px;font:500 15px/1 var(--mono);font-variant-numeric:tabular-nums}
-.field textarea{height:auto;padding:10px 12px;font:400 15px/1.4 var(--sans);resize:vertical}
-.field input:focus,.field select:focus,.field textarea:focus{outline:3px solid var(--signal);outline-offset:1px}
-.field .hint{font:400 11px/1.45 var(--mono);color:var(--ink-2)}
-.field.assume input{box-shadow:inset 0 0 0 1.5px var(--ink-2)}
-.total{border-top:2px solid var(--ink);padding-top:12px}
-.big{font:800 clamp(30px,8cqi,48px)/1 var(--display);font-stretch:100%;font-variant-numeric:tabular-nums;margin:4px 0 12px;overflow-wrap:anywhere}
-.bars{display:grid;gap:10px;margin:0 0 12px}
-.bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;font:400 12.5px/1.3 var(--mono)}
-.bar .track{grid-column:1/-1;height:12px;border-radius:6px;background:var(--rule);overflow:hidden}
-.bar .track span{display:block;height:100%;background:var(--ink);border-radius:6px;transition:width .3s}
-.bar:nth-child(2) .track span{background:var(--signal)}
-@container (max-width:260px){.calc{grid-template-columns:minmax(0,1fr)}}
-
-/* pricing */
-.plans{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:10px}
-.plan{border-radius:12px;box-shadow:inset 0 0 0 1.5px var(--rule);padding:14px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px}
-.plan.mark2{box-shadow:inset 0 0 0 2px var(--ink)}
-.plan h3{margin:0;font:800 18px/1.1 var(--display);font-stretch:100%}
-.plan .sub{font:400 12px/1.4 var(--mono);color:var(--ink-2)}
-.plan .price{font:800 26px/1 var(--display);text-align:right;font-variant-numeric:tabular-nums}
-.plan .per{font:400 11px/1.3 var(--mono);color:var(--ink-2);text-align:right}
-.plan ul{grid-column:1/-1;margin:8px 0 0;padding:0 0 0 18px;font-size:14px;line-height:1.45}
-.plan .est{grid-column:1/-1;font:500 12px/1.4 var(--mono);margin-top:6px}
-.plan .flag{display:inline-block;font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--signal);color:var(--ink);padding:3px 6px;border-radius:4px;margin-top:6px}
-
-/* book */
-.bookgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
-.bookgrid .wide{grid-column:1/-1}
-@container (max-width:400px){.bookgrid{grid-template-columns:minmax(0,1fr)}}
-.gets{margin:0 0 18px;font-size:15px;line-height:1.5}
-.err{color:var(--signal-ink);font:500 12px/1.4 var(--mono);margin:10px 0}
-.done-note{border-radius:12px;background:var(--safe-wash);box-shadow:inset 0 0 0 1.5px var(--safe);padding:16px;font-size:15px;line-height:1.5}
-.done-note b{display:block;font:600 11px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--safe);margin-bottom:6px}
-.cardfoot{font:400 11px/1.4 var(--mono);color:var(--ink-2);margin:22px 0 0}
-
-/* ---------- controls ---------- */
-.ctrl{grid-area:ctrl;display:flex;justify-content:center;align-items:center;gap:var(--s3);padding:var(--s4) var(--s4) var(--s5);flex-wrap:wrap}
-.cb{min-height:52px;min-width:52px;border:0;border-radius:999px;padding:0 22px;font:700 15px/1 var(--display);font-stretch:100%;letter-spacing:.02em;display:inline-flex;align-items:center;justify-content:center;gap:10px;white-space:nowrap}
-.cb.back{background:transparent;color:var(--on-table);box-shadow:inset 0 0 0 1.5px var(--on-table-line);padding:0 18px}
-.cb.back:disabled{opacity:.35;cursor:default}
-.cb.dis{background:var(--card);color:var(--ink)}
-.cb.esc{background:var(--signal);color:var(--ink)}
-.cb.next{background:var(--card);color:var(--ink)}
-.cb{transition:transform .12s ease,background-color .15s,filter .15s}
-.cb:hover:not(:disabled){filter:brightness(1.05)}
-.cb.back:hover:not(:disabled){background:var(--on-table-hover)}
-.cb.dis:hover,.cb.next:hover{background:var(--paper)}
-.cb:active:not(:disabled),.btn:active,.index button:active{transform:scale(.96)}
-.btn{transition:transform .12s ease,background-color .15s,opacity .15s}
-.card :focus-visible{outline-color:var(--ink)}
-.index button:focus-visible{outline-offset:0}
-.index button[aria-current="true"]:hover{background:var(--paper)}
-.cb svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none}
-.progress{font:500 11px/1 var(--mono);color:var(--on-table-2);letter-spacing:.08em;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
-
-/* ---------- mid widths ---------- */
-@media (max-width:1120px){
-  .app{grid-template-columns:200px minmax(0,1fr);grid-template-areas:"head head" "index deck" "foot ctrl"}
-  .log,.kbd{display:none}
-}
-/* ---------- phone portrait ---------- */
-@media (max-width:760px){
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"head" "index" "deck" "ctrl"}
-  .head{padding:10px 16px;gap:10px}
-  .head .tag,.foot{display:none}
-  .mark{font-size:15px}
-  .btn{min-height:36px;padding:0 14px;font-size:12.5px}
-  .index{padding:0 0 4px}
-  .index h2{display:none}
-  .index ol{display:flex;gap:6px;overflow-x:auto;padding:2px 16px 6px;scrollbar-width:none}
-  .index ol::-webkit-scrollbar{display:none}
-  .index button{display:flex;gap:6px;padding:8px 12px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--on-table-line);font-size:13px;white-space:nowrap}
-  .index .n{display:none}
-  .deck{padding:0 16px}
-  .stage{width:100%;height:100%;padding-top:20px}
-  .card{top:20px}
-  .cbody{padding:18px 18px 22px}
-  .alert .cbody{padding-left:24px}
-  .ctrl{padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));gap:8px;flex-wrap:nowrap}
-  .cb{min-height:50px;padding:0 16px;font-size:14px}
-  .cb.back{padding:0 14px}
-  .cb .lbl-back{display:none}
-  .progress{display:none}
-}
-@media (max-width:360px){ .cb{padding:0 12px;font-size:13px} .mark{letter-spacing:.02em} }
-/* ---------- phone landscape: deck left, index and controls right ---------- */
-@media (max-height:520px) and (orientation:landscape){
-  .app{grid-template-columns:minmax(0,1fr) 230px;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"head head" "deck index" "deck ctrl"}
-  .head{padding:6px 16px}
-  .head .tag,.foot,.log,.kbd{display:none}
-  .index{padding:0 16px 0 4px;overflow:auto;min-height:0}
-  .index h2{display:none}
-  .index ol{display:flex;flex-wrap:wrap;gap:4px;padding:0;overflow:visible}
-  .index button{display:flex;width:auto;padding:6px 10px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--on-table-line);font-size:12px;white-space:nowrap}
-  .index .n{display:none}
-  .deck{padding:0 8px 8px 16px}
-  .stage{width:100%;height:100%;padding-top:14px}
-  .card{top:14px}
-  .ctrl{padding:6px 16px calc(8px + env(safe-area-inset-bottom,0px)) 4px;gap:6px;flex-wrap:wrap;justify-content:flex-start}
-  .cb{min-height:44px;padding:0 14px;font-size:13px}
-  .cb .lbl-back{display:none}
-  .progress{display:none}
-  .cbody{padding:14px 18px 18px}
-  .h{margin-bottom:10px}
-}
-
-/* ---------- no-JS fallback: one linear page of cards ---------- */
-html:not(.js) body{overflow:auto}
-html:not(.js) .app{display:block;height:auto}
-html:not(.js) .index,html:not(.js) .log,html:not(.js) .kbd,html:not(.js) .ctrl,html:not(.js) .js-only{display:none!important}
-html:not(.js) .stage{height:auto;padding:0;display:grid;gap:16px;margin:0 auto}
-html:not(.js) .card{position:static;transform:none!important}
-html:not(.js) .deck{display:block;padding:16px}
-
-@media (prefers-reduced-motion:reduce){
-  .card{transition:opacity .2s linear!important}
-  .caret::after{animation:none}
-  .tk,.bar .track span{transition:none}
-}
-</style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "__SITE_URL__/#org",
+          "name": "Northwall",
+          "url": "__SITE_URL__/",
+          "logo": "__SITE_URL__/apple-touch-icon.png",
+          "slogan": "See the attack before it lands.",
+          "description": "Concept brand. Threat detection and response for companies of 50 to 500 people."
+        },
+        {
+          "@type": "WebSite",
+          "@id": "__SITE_URL__/#website",
+          "url": "__SITE_URL__/",
+          "name": "Northwall",
+          "inLanguage": "en",
+          "publisher": { "@id": "__SITE_URL__/#org" }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Northwall",
+          "applicationCategory": "SecurityApplication",
+          "operatingSystem": "Windows, macOS, Linux, Microsoft 365, Google Workspace",
+          "description": "Watches laptops, servers, email, sign-ins and cloud apps from one console, links related alerts into one incident, contains confirmed attacks by isolating the device, revoking the session and blocking the address, and writes a plain-language incident report.",
+          "audience": { "@type": "BusinessAudience", "numberOfEmployees": { "@type": "QuantitativeValue", "minValue": 50, "maxValue": 500 } },
+          "publisher": { "@id": "__SITE_URL__/#org" }
+        }
+      ]
+    }
+    </script>
+    <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
-<script>document.documentElement.classList.add('js')</script>
 <div class="app">
   <header class="head">
     <div class="mark"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><rect x="1" y="4" width="13" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5.5" y="1" width="13" height="15" rx="2.5" fill="var(--signal)" stroke="currentColor" stroke-width="1.6"/></svg>NORTHWALL</div>
-    <div class="tag">Threat detection and response for 50 to 500 person companies</div>
+    <h1 class="tag"><span class="sr">Northwall: </span>Threat detection and response for 50 to 500 person companies</h1>
     <div class="sp"></div>
     <button class="btn card-c" type="button" data-go="book">Book a review</button>
   </header>
@@ -350,15 +79,15 @@ html:not(.js) .deck{display:block;padding:16px}
     <h2>Chapters</h2>
     <ol id="chapters"></ol>
   </nav>
-  <p class="foot">Concept site. Design and build by [YOUR STUDIO].</p>
+  <footer class="foot">Concept site. Design and build by [YOUR STUDIO].</footer>
 
   <main class="deck">
-    <div class="stage" id="stage" tabindex="0" role="region" aria-roledescription="card deck" aria-label="Northwall deck. Use left and right arrow keys.">
+    <section class="stage" id="stage" tabindex="0" aria-roledescription="card deck" aria-label="Northwall deck. Use left and right arrow keys.">
       <article class="card cover" data-ch="cover" data-label="Cover">
         <header class="ctab"><span><b>00</b> Northwall</span><span>Shift starts 09:41</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <div>
-            <h1 class="h">See the attack <span>before it lands.</span></h1>
+            <h2 class="h">See the attack <span>before it lands.</span></h2>
             <p class="lead">Northwall watches a company of 50 to 500 people and joins the small alerts that matter into one incident, then contains it. Work one shift and see the difference.</p>
           </div>
           <div class="fan" aria-hidden="true">
@@ -368,7 +97,7 @@ html:not(.js) .deck{display:block;padding:16px}
           </div>
           <div class="waiting">
             <span class="minideck" aria-hidden="true"><i></i><i></i><i></i></span>
-            <p class="small" style="margin:0"><b style="color:var(--ink)">10 alerts waiting.</b> Harrow &amp; Pine Logistics (fictional), 240 staff. <span class="js-only">Swipe right to escalate, left to dismiss.</span></p>
+            <p class="small m0"><b class="ink">10 alerts waiting.</b> Harrow &amp; Pine Logistics (fictional), 240 staff. <span class="js-only">Swipe right to escalate, left to dismiss.</span></p>
           </div>
         </div>
       </article>
@@ -376,7 +105,7 @@ html:not(.js) .deck{display:block;padding:16px}
 
       <article class="card" data-ch="shift" data-label="Your shift">
         <header class="ctab"><span><b>01</b> Your shift</span><span class="simu">Simulation</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <h2 class="h m">Ten alerts. Five of them are one attack.</h2>
           <p class="p">You are the IT lead at Harrow &amp; Pine Logistics, a fictional company with 240 staff in Leeds, Chicago and Dubai. It is 09:41. Each card is one alert. Decide what gets your attention.</p>
           <div class="how" aria-hidden="true">
@@ -391,11 +120,11 @@ html:not(.js) .deck{display:block;padding:16px}
 
       <article class="card" data-ch="linked" data-label="What Northwall saw">
         <header class="ctab"><span><b>02</b> What Northwall saw</span><span class="simu">Simulation</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <h2 class="h m" id="resHead">The five that mattered, linked.</h2>
           <div class="score" id="score">
             <div><b id="scYou">0 / 5</b><span id="scYouTxt">attack signals you escalated</span></div>
-            <div class="nw"><b>5 / 5</b><span>linked by Northwall into <span style="white-space:nowrap">INC-0417</span> at 09:45:19</span></div>
+            <div class="nw"><b>5 / 5</b><span>linked by Northwall into <span class="nowrap">INC-0417</span> at 09:45:19</span></div>
           </div>
           <div class="tixwrap" id="tixwrap">
             <div class="tix" id="tix"></div>
@@ -407,7 +136,7 @@ html:not(.js) .deck{display:block;padding:16px}
 
       <article class="card" data-ch="report" data-label="Incident report">
         <header class="ctab"><span><b>03</b> Incident report</span><span id="repState">draft</span></header>
-        <div class="cbody" id="repScroll">
+        <div class="cbody" id="repScroll" tabindex="0">
           <article class="rep" id="rep" aria-live="off">
             <p class="kick">Report INC-0417 · simulated</p>
             <p class="p">Northwall writes this report while you watch: what happened, when, what it did about it, and what it would have cost you.</p>
@@ -417,7 +146,7 @@ html:not(.js) .deck{display:block;padding:16px}
 
       <article class="card" data-ch="readme" data-label="Readme">
         <header class="ctab"><span><b>04</b> Readme</span><span>5 lines</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <h2 class="h m">What did that</h2>
           <ol class="lines">
             <li>Northwall watches laptops, servers, email, sign-ins and cloud apps from one console.</li>
@@ -426,28 +155,28 @@ html:not(.js) .deck{display:block;padding:16px}
             <li>Every incident ends with a written report your leadership and insurer can read.</li>
             <li>Built for companies of 50 to 500 people with a small IT team and no night shift.</li>
           </ol>
-          <div class="row" style="margin-bottom:var(--s4)"><button class="btn ink" type="button" data-go="book">Book a security review</button></div>
+          <div class="row mb4"><button class="btn ink" type="button" data-go="book">Book a security review</button></div>
           <p class="small">Compliance: <span class="verify">[VERIFY: SOC 2 status]</span></p>
         </div>
       </article>
       <article class="card" data-ch="cost" data-label="Downtime cost">
         <header class="ctab"><span><b>05</b> Downtime cost</span><span>your inputs</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <h2 class="h m">What an outage costs you</h2>
-          <p class="small" style="margin-top:-6px">Example inputs. Change them.</p>
-          <form class="calc" id="calc" onsubmit="return false">
+          <p class="small sub-h">Example inputs. Change them.</p>
+          <div class="calc" id="calc" role="group" aria-label="Downtime inputs">
             <div class="field"><label for="c-emp">Employees</label><input id="c-emp" type="number" inputmode="numeric" min="1" max="100000" step="1" value="240"></div>
             <div class="field"><label for="c-rev">Revenue per hour</label><input id="c-rev" type="number" inputmode="numeric" min="0" step="100" value="9000"></div>
             <div class="field"><label for="c-hrs">Hours down</label><input id="c-hrs" type="number" inputmode="decimal" min="0" max="2000" step="1" value="16"></div>
             <div class="field"><label for="c-cur">Currency</label><select id="c-cur"><option value="USD">USD $</option><option value="GBP">GBP £</option><option value="AUD">AUD A$</option><option value="AED">AED</option></select></div>
-            <div class="field assume" style="grid-column:1/-1"><label for="c-wage">Assumed cost per employee hour</label><input id="c-wage" type="number" inputmode="numeric" min="0" step="1" value="45"><span class="hint">Salary plus overhead while people cannot work. Use your own figure. <span class="verify">[VERIFY]</span></span></div>
-          </form>
+            <div class="field assume full"><label for="c-wage">Assumed cost per employee hour</label><input id="c-wage" type="number" inputmode="numeric" min="0" step="1" value="45"><span class="hint">Salary plus overhead while people cannot work. Use your own figure. <span class="verify">[VERIFY]</span></span></div>
+          </div>
           <div class="total" aria-live="polite">
-            <p class="small" id="costLead" style="margin:0">16 hours down would cost about</p>
+            <p class="small m0" id="costLead">16 hours down would cost about</p>
             <div class="big" id="costTotal">$316,800</div>
             <div class="bars">
-              <div class="bar"><span>Lost revenue</span><b id="costRev">$144,000</b><div class="track"><span id="barRev" style="width:83%"></span></div></div>
-              <div class="bar"><span>Idle staff time</span><b id="costIdle">$172,800</b><div class="track"><span id="barIdle" style="width:100%"></span></div></div>
+              <div class="bar"><span>Lost revenue</span><b id="costRev">$144,000</b><div class="track"><span id="barRev"></span></div></div>
+              <div class="bar"><span>Idle staff time</span><b id="costIdle">$172,800</b><div class="track"><span id="barIdle"></span></div></div>
             </div>
             <p class="small">Not included: recovery work, forensics, fines, ransom, lost customers. The real number is higher.</p>
           </div>
@@ -456,7 +185,7 @@ html:not(.js) .deck{display:block;padding:16px}
 
       <article class="card" data-ch="pricing" data-label="Pricing">
         <header class="ctab"><span><b>06</b> Pricing</span><span>USD · concept</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <h2 class="h m">Per employee, per month</h2>
           <ul class="plans">
             <li class="plan"><div><h3>Watch</h3><span class="sub">We see it, you act</span></div><div><div class="price">$5</div><div class="per">/ employee / mo</div></div>
@@ -472,14 +201,14 @@ html:not(.js) .deck{display:block;padding:16px}
 
       <article class="card" data-ch="book" data-label="Book a review">
         <header class="ctab"><span><b>07</b> Book a review</span><span>45 min</span></header>
-        <div class="cbody">
+        <div class="cbody" tabindex="0">
           <h2 class="h m">Book a security review</h2>
           <p class="gets">45 minutes with a Northwall engineer. We look at how an attacker would reach you today, where your alerts go after 6 pm, and what you would see in a report like INC-0417. You keep the written findings whether you buy or not.</p>
           <form id="book" novalidate>
             <div class="bookgrid">
-              <div class="field"><label for="b-name">Your name</label><input id="b-name" name="name" autocomplete="name" required></div>
+              <div class="field"><label for="b-name">Your name</label><input id="b-name" name="name" type="text" autocomplete="name" required></div>
               <div class="field"><label for="b-email">Work email</label><input id="b-email" name="email" type="email" autocomplete="email" required></div>
-              <div class="field"><label for="b-co">Company</label><input id="b-co" name="company" autocomplete="organization" required></div>
+              <div class="field"><label for="b-co">Company</label><input id="b-co" name="company" type="text" autocomplete="organization" required></div>
               <div class="field"><label for="b-size">Headcount</label><select id="b-size" name="size"><option>50 to 99</option><option selected>100 to 249</option><option>250 to 500</option><option>Other</option></select></div>
               <div class="field"><label for="b-worry">Main concern</label><select id="b-worry" name="worry"><option>Ransomware</option><option>Phishing and stolen logins</option><option>No cover outside office hours</option><option>Insurer or audit requirement</option><option>Something else</option></select></div>
               <div class="field"><label for="b-week">Preferred week</label><select id="b-week" name="week"><option>Next available</option></select></div>
@@ -492,7 +221,7 @@ html:not(.js) .deck{display:block;padding:16px}
           <p class="cardfoot">Concept site. Design and build by [YOUR STUDIO].</p>
         </div>
       </article>
-    </div>
+    </section>
   </main>
 
   <aside class="log js-only" aria-label="Your shift log">
@@ -500,307 +229,17 @@ html:not(.js) .deck{display:block;padding:16px}
     <p class="empty" id="logEmpty">No decisions yet. Your calls appear here as you swipe.</p>
     <ol id="log"></ol>
   </aside>
-  <p class="kbd js-only" id="kbd"></p>
+  <aside class="kbd js-only" id="kbd" aria-label="Keyboard shortcuts"></aside>
 
-  <div class="ctrl js-only" id="ctrl">
+  <nav class="ctrl js-only" id="ctrl" aria-label="Deck controls">
     <button class="cb back" type="button" id="bBack" aria-label="Back"><svg viewBox="0 0 16 16"><path d="M10 3L5 8l5 5"/></svg><span class="lbl-back">Back</span></button>
     <button class="cb dis" type="button" id="bDis" hidden><svg viewBox="0 0 16 16"><path d="M3 3l10 10M13 3L3 13"/></svg>Dismiss</button>
     <span class="progress" id="prog">1 / 18</span>
     <button class="cb esc" type="button" id="bEsc" hidden>Escalate<svg viewBox="0 0 16 16"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5"/></svg></button>
     <button class="cb next" type="button" id="bNext">Start the shift<svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5"/></svg></button>
-  </div>
+  </nav>
   <p class="sr" id="live" aria-live="polite"></p>
 </div>
-
-<script>
-(()=>{
-'use strict';
-const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const RM=matchMedia('(prefers-reduced-motion: reduce)'); const reduced=()=>RM.matches;
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-
-/* ---------------- the ten alerts ---------------- */
-const ALERTS=[
-  {t:'09:41:07',sev:'info',tag:'INFO',src:'mail-gw',kind:'Email gateway',msg:'Email "Updated payroll portal" from payroll@harrow-pine.co delivered to j.okafor.',ctx:[['Note','Sender domain registered 4 days ago'],['Your domain','harrowpine.co.uk']],real:true},
-  {t:'09:41:52',sev:'low',tag:'LOW',src:'identity',kind:'Sign-in',msg:'3 failed sign-ins for m.reyes, then a success from the Leeds office network.',ctx:[['Note','m.reyes changed password yesterday'],['Device','Known, office desktop']],real:false},
-  {t:'09:42:31',sev:'low',tag:'LOW',src:'LT-0142',kind:'Endpoint',msg:'Excel opened an attachment. A macro started powershell.exe.',ctx:[['Device','Finance laptop, user j.okafor'],['Seen before','Macros are rare on this laptop']],real:true},
-  {t:'09:42:58',sev:'low',tag:'LOW',src:'endpoint',kind:'Endpoint',msg:'Antivirus signature update failed on 4 warehouse tablets.',ctx:[['Note','Retries automatically at 09:50'],['Devices','WH-TAB-03, 05, 07, 11']],real:false},
-  {t:'09:43:10',sev:'med',tag:'MED',src:'identity',kind:'Sign-in',msg:'j.okafor signed in from a new network (AS64500), 39 seconds after the macro ran.',ctx:[['Travel','None booked'],['MFA','Approved by push']],real:true},
-  {t:'09:43:40',sev:'low',tag:'LOW',src:'WH-TAB-07',kind:'Endpoint',msg:'USB storage connected to a warehouse tablet.',ctx:[['Device name','Label printer driver stick'],['Seen before','Weekly']],real:false},
-  {t:'09:44:02',sev:'high',tag:'HIGH',src:'LT-0142',kind:'Network',msg:'Outbound beacon to 203.0.113.44 every 60 s over HTTPS.',ctx:[['Address','Never seen in your network'],['Device','Finance laptop, user j.okafor']],real:true},
-  {t:'09:44:30',sev:'med',tag:'MED',src:'cloud',kind:'Cloud app',msg:'1.2 GB uploaded to a file-sharing app by the design team.',ctx:[['Note','Weekly print files'],['Seen before','Same size, same day, 8 weeks running']],real:false},
-  {t:'09:44:51',sev:'med',tag:'MED',src:'identity',kind:'Sign-in',msg:'s.patel signed in from London, then from Dubai 7 hours later.',ctx:[['Travel','Flight LHR to DXB booked'],['Device','Known laptop']],real:false},
-  {t:'09:45:18',sev:'high',tag:'HIGH',src:'FS-02',kind:'File server',msg:'Finance share on FS-02 opened with the j.okafor session from LT-0142.',ctx:[['Seen before','First time this laptop touched FS-02'],['Share','\\\\FS-02\\finance$']],real:true},
-];
-const EV=[
-  {t:'09:41:07',msg:'Phishing email delivered to j.okafor from a 4-day-old lookalike domain.',a:0},
-  {t:'09:42:31',msg:'Macro started powershell.exe on LT-0142.',a:2},
-  {t:'09:42:33',msg:'First alert: rule NW-B112, encoded PowerShell from an Office document.'},
-  {t:'09:43:10',msg:'j.okafor signed in from a new network (AS64500).',a:4},
-  {t:'09:44:02',msg:'LT-0142 beacons to 203.0.113.44 every 60 s.',a:6},
-  {t:'09:45:18',msg:'Finance share on FS-02 opened with the stolen session.',a:9},
-  {t:'09:45:19',msg:'Incident INC-0417 opened. 5 signals linked.'},
-  {t:'09:45:21',msg:'LT-0142 isolated from the network.'},
-  {t:'09:45:22',msg:'All j.okafor sessions revoked, password reset forced.'},
-  {t:'09:45:24',msg:'203.0.113.44 blocked at all three sites.'},
-  {t:'09:45:40',msg:'No mass file changes on FS-02. Shares intact.'},
-  {t:'09:46:02',msg:'INC-0417 contained.'},
-];
-
-/* build alert cards */
-(function(){
-  const slot=$('#alertSlot'), frag=document.createDocumentFragment();
-  ALERTS.forEach((a,i)=>{
-    const c=document.createElement('article'); c.className='card alert'; c.dataset.ch='shift'; c.dataset.alert=i; c.dataset.sev=a.sev; c.dataset.label='Alert '+(i+1)+' of 10';
-    c.innerHTML='<header class="ctab"><span><b>Alert '+String(i+1).padStart(2,'0')+'</b> / 10</span><span class="simu">Simulation</span></header>'+
-      '<div class="cbody"><span class="stripe" aria-hidden="true"></span><div class="sevrow"><span class="sev '+a.sev+'">'+a.tag+'</span><span class="atime">'+a.t+'</span></div>'+
-      '<p class="asrc"></p><p class="amsg"></p><dl class="actx"></dl><p class="ask"><span>← Dismiss</span><span>Escalate →</span></p><p class="decided" hidden></p></div>'+
-      '<span class="stampx esc" aria-hidden="true">ESCALATE</span><span class="stampx dis" aria-hidden="true">DISMISS</span>';
-    $('.asrc',c).textContent=a.src+' · '+a.kind; $('.amsg',c).textContent=a.msg;
-    const dl=$('.actx',c); a.ctx.forEach(([k,v])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=v;dl.append(dt,dd)});
-    frag.appendChild(c);
-  });
-  slot.replaceWith(frag);
-})();
-
-/* ---------------- deck engine ---------------- */
-const stage=$('#stage'); const cards=$$('.card',stage);
-const CH=[['cover','Cover'],['shift','Your shift'],['linked','What Northwall saw'],['report','Incident report'],['readme','Readme'],['cost','Downtime cost'],['pricing','Pricing'],['book','Book a review']];
-const first=ch=>cards.findIndex(c=>c.dataset.ch===ch);
-let idx=0; const dec=Array(10).fill(null);
-
-const chap=$('#chapters');
-CH.forEach(([k,l],i)=>{const li=document.createElement('li'); li.innerHTML='<button type="button" data-go="'+k+'"><span class="n">0'+i+'</span><span class="l"></span><span class="c"></span></button>'; $('.l',li).textContent=l; chap.appendChild(li)});
-
-function layout(){
-  cards.forEach((c,i)=>{
-    if(flying.has(c)) return;
-    const d=i-idx;
-    if(d<0||d>2){ c.hidden=true; c.classList.remove('top'); c.inert=true; return }
-    c.hidden=false;
-    c.style.zIndex=String(100-d);
-    if(!c.classList.contains('dragging')&&!c.classList.contains('nudge')) c.style.transform=d?'translateY('+(-d*11)+'px) scale('+(1-d*.045)+')':'';
-    c.style.opacity='1';
-    c.classList.toggle('top',d===0);
-    c.inert=d!==0; c.setAttribute('aria-hidden',String(d!==0));
-  });
-}
-const current=()=>cards[idx];
-const isAlert=c=>c.classList.contains('alert');
-function updateUI(){
-  const c=current(), al=isAlert(c), ch=c.dataset.ch;
-  $('#bBack').disabled=idx===0;
-  $('#bDis').hidden=!al; $('#bEsc').hidden=!al; $('#bNext').hidden=al||idx===cards.length-1;
-  $('#bNext').firstChild.nodeValue=idx===0?'Start the shift':ch==='shift'?'First alert':ch==='pricing'?'Book':'Next';
-  $('#prog').textContent=(idx+1)+' / '+cards.length;
-  $$('#chapters button').forEach(b=>{const on=b.dataset.go===ch; b.setAttribute('aria-current',String(on));
-    $('.c',b).textContent=b.dataset.go==='shift'?(dec.filter(Boolean).length+'/10'):'';
-    if(on) b.scrollIntoView({block:'nearest',inline:'nearest'})});
-  $('#kbd').innerHTML=al?'<kbd>→</kbd> escalate<br><kbd>←</kbd> dismiss<br><kbd>Backspace</kbd> back':'<kbd>→</kbd> next<br><kbd>←</kbd> back<br><kbd>1</kbd> to <kbd>8</kbd> jump to chapter';
-  $('#live').textContent='Card '+(idx+1)+' of '+cards.length+': '+c.dataset.label+(al?'. '+ALERTS[+c.dataset.alert].tag+', '+ALERTS[+c.dataset.alert].msg+' Press right to escalate or left to dismiss.':'.');
-  onEnter(c);
-}
-const flying=new Set();
-function flyOut(c,dir){
-  flying.add(c); c.inert=true; c.classList.remove('top'); c.style.zIndex='150';
-  if(reduced()){ c.style.transition='opacity .18s linear'; c.style.opacity='0' }
-  else { const w=stage.clientWidth; c.style.transition='transform .34s cubic-bezier(.4,0,1,1),opacity .34s'; c.style.transform='translate('+(dir*w*1.25)+'px,-30px) rotate('+(dir*16)+'deg)'; c.style.opacity='0' }
-  c._t=setTimeout(()=>{ flying.delete(c); c.style.transition='none'; c.style.opacity=''; layout(); c.getBoundingClientRect(); c.style.transition='' },reduced()?200:360);
-}
-function go(n,{dir=-1,fly=true}={}){
-  if(n===idx||n<0||n>=cards.length) return;
-  const c=current(), old=idx;
-  if(n>old&&fly) flyOut(c,dir);
-  if(n<old){ const p=cards[n];
-    if(flying.has(p)){ clearTimeout(p._t); flying.delete(p) }
-    else if(fly&&!reduced()){ p.hidden=false; p.style.transition='none'; p.style.opacity='1'; p.style.transform='translate('+(-stage.clientWidth*1.2)+'px,-30px) rotate(-14deg)'; p.getBoundingClientRect(); p.style.transition='' }
-  }
-  idx=n; layout(); updateUI();
-}
-const next=(dir=-1)=>go(idx+1,{dir});
-const nextBtn=()=>go(idx+1,{dir:1});
-const back=()=>go(idx-1);
-function decide(d){
-  const c=current(); if(!isAlert(c)) return;
-  const i=+c.dataset.alert; dec[i]=d;
-  const p=$('.decided',c); p.hidden=false; p.textContent='Your call: '+(d==='esc'?'escalated':'dismissed'); p.style.color=d==='esc'?'var(--signal-ink)':'var(--ink-2)';
-  $('.stampx.'+d,c).style.opacity='1';
-  renderLog(); reportDirty=true;
-  next(d==='esc'?1:-1);
-}
-function renderLog(){
-  const ol=$('#log'); ol.innerHTML='';
-  dec.forEach((d,i)=>{ if(!d) return; const a=ALERTS[i]; const li=document.createElement('li');
-    li.innerHTML='<span class="t"></span><span class="s"></span><span class="d '+d+'"></span>';
-    li.children[0].textContent=a.t; li.children[1].textContent=a.src; li.children[2].textContent=d==='esc'?'ESC':'DIS'; ol.appendChild(li) });
-  $('#logEmpty').hidden=dec.some(Boolean);
-}
-
-$('#bBack').addEventListener('click',back);
-$('#bNext').addEventListener('click',nextBtn);
-$('#bDis').addEventListener('click',()=>decide('dis'));
-$('#bEsc').addEventListener('click',()=>decide('esc'));
-document.addEventListener('click',e=>{const g=e.target.closest('[data-go]'); if(g){ const n=first(g.dataset.go); if(n>-1) go(n,{fly:Math.abs(n-idx)===1}) }});
-document.addEventListener('keydown',e=>{
-  const t=document.activeElement, inField=t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName);
-  if(inField||e.metaKey||e.ctrlKey||e.altKey) return;
-  const al=isAlert(current());
-  if(e.key==='ArrowRight'){ e.preventDefault(); al?decide('esc'):next(-1) }
-  else if(e.key==='ArrowLeft'){ e.preventDefault(); al?decide('dis'):back() }
-  else if(e.key==='Backspace'){ e.preventDefault(); back() }
-  else if(e.key==='Home'&&t===stage){ e.preventDefault(); go(0,{fly:false}) }
-  else if(/^[1-8]$/.test(e.key)){ go(first(CH[+e.key-1][0]),{fly:false}) }
-});
-
-/* drag physics: horizontal throw, vertical left to the card's own scroll */
-(function(){
-  let d=null;
-  const skip=el=>el.closest('input,select,textarea,button,a,label,.field');
-  stage.addEventListener('pointerdown',e=>{
-    const c=e.target.closest('.card'); if(!c||!c.classList.contains('top')||skip(e.target)) return;
-    if(e.pointerType==='mouse'&&e.button!==0) return;
-    c.classList.remove('nudge');
-    d={c,id:e.pointerId,sx:e.clientX,sy:e.clientY,x:0,lx:e.clientX,lt:performance.now(),v:0,live:false};
-  });
-  stage.addEventListener('pointermove',e=>{
-    if(!d||e.pointerId!==d.id) return;
-    const dx=e.clientX-d.sx, dy=e.clientY-d.sy;
-    if(!d.live){ if(Math.abs(dx)<8) return; if(Math.abs(dy)>Math.abs(dx)){ d=null; return } d.live=true; d.c.classList.add('dragging'); try{d.c.setPointerCapture(d.id)}catch(_){} }
-    const now=performance.now(); d.v=(e.clientX-d.lx)/Math.max(1,now-d.lt); d.lx=e.clientX; d.lt=now; d.x=dx;
-    d.c.style.transform='translate('+dx+'px,'+(dy*.15)+'px) rotate('+(dx*.05)+'deg)';
-    if(isAlert(d.c)){ const k=Math.min(1,Math.abs(dx)/110); $('.stampx.esc',d.c).style.opacity=dx>0?k:0; $('.stampx.dis',d.c).style.opacity=dx<0?k:0 }
-  });
-  const end=e=>{
-    if(!d||e.pointerId!==d.id) return; const {c,x,v,live}=d; d=null; if(!live) return;
-    c.classList.remove('dragging');
-    const w=stage.clientWidth, thrown=Math.abs(x)>w*.28||(Math.abs(v)>.55&&Math.abs(x)>30);
-    if(thrown&&e.type==='pointerup'){
-      const dir=(Math.abs(v)>.55?Math.sign(v):Math.sign(x))||1;
-      if(isAlert(c)) decide(dir>0?'esc':'dis'); else if(idx<cards.length-1) next(dir); else springBack(c);
-    } else springBack(c);
-  };
-  function springBack(c){ c.style.transition='transform .45s cubic-bezier(.2,1.5,.4,1)'; c.style.transform=''; if(isAlert(c)){ const i=+c.dataset.alert; $$('.stampx',c).forEach(s=>s.style.opacity=dec[i]&&s.classList.contains(dec[i])?'1':'0') } setTimeout(()=>c.style.transition='',460) }
-  stage.addEventListener('pointerup',end); stage.addEventListener('pointercancel',end);
-})();
-
-/* ---------------- entering cards ---------------- */
-let reportDirty=true, repRun=0;
-let touched=false; const nudged=new Set();
-stage.addEventListener('pointerdown',()=>touched=true,true); addEventListener('keydown',()=>touched=true,true);
-function nudge(c,delay){ if(reduced()||nudged.has(c)) return; nudged.add(c); setTimeout(()=>{ if(current()!==c||(touched&&c.dataset.ch==='cover')) return; c.classList.add('nudge'); c.addEventListener('animationend',()=>c.classList.remove('nudge'),{once:true}) },delay) }
-function onEnter(c){
-  const ch=c.dataset.ch;
-  if(ch==='cover') nudge(c,1400);
-  if(isAlert(c)&&c.dataset.alert==='0') nudge(c,2200);
-  if(isAlert(c)){ const i=+c.dataset.alert; $$('.stampx',c).forEach(s=>s.style.opacity=dec[i]&&s.classList.contains(dec[i])?'1':'0') }
-  if(ch==='linked') renderResult();
-  if(ch==='report'&&reportDirty) writeReport();
-}
-function renderResult(){
-  const played=dec.filter(Boolean).length, caught=ALERTS.filter((a,i)=>a.real&&dec[i]==='esc').length, falseEsc=ALERTS.filter((a,i)=>!a.real&&dec[i]==='esc').length;
-  $('#scYou').textContent=played?caught+' / 5':'0 / 5';
-  $('#scYouTxt').textContent=played?'attack signals you escalated'+(falseEsc?', plus '+falseEsc+' false alarm'+(falseEsc>1?'s':''):''):'You skipped the shift. Go back to play it.';
-  $('#resHead').textContent=!played?'The five that mattered, linked.':caught===5?'You caught all five. Northwall linked them in time.':'You caught '+caught+' of 5. Northwall linked all five.';
-  const tix=$('#tix'); tix.innerHTML='';
-  ALERTS.forEach((a,i)=>{ const d=document.createElement('div'); d.className='tk '+(a.real?'real':'noise');
-    d.innerHTML='<span class="tt"></span><span class="ts"></span><span class="ty '+(dec[i]||'none')+'"></span>';
-    d.children[0].textContent=a.t; d.children[1].textContent=a.src; d.children[2].textContent=dec[i]==='esc'?'ESCALATED':dec[i]==='dis'?'DISMISSED':'NOT SEEN';
-    d.setAttribute('aria-label',a.t+' '+a.src+': '+(a.real?'part of the attack':'noise')+'. You '+(dec[i]==='esc'?'escalated':dec[i]==='dis'?'dismissed':'did not see')+' it.');
-    tix.appendChild(d) });
-  const wrap=$('#tixwrap'); wrap.classList.remove('shown'); $('#thread').innerHTML=''; $('#dots').innerHTML='';
-  setTimeout(()=>{ wrap.classList.add('shown'); drawThread(true) }, reduced()?0:350);
-}
-function drawThread(animate){
-  const wrap=$('#tixwrap'), svg=$('#thread'); if(!wrap.classList.contains('shown')) return;
-  const wr=wrap.getBoundingClientRect(); if(!wr.width) return;
-  const pts=$$('.tk.real',wrap).map(el=>{const r=el.getBoundingClientRect(); return [r.left-wr.left+r.width/2, r.bottom-wr.top]});
-  svg.setAttribute('viewBox','0 0 '+wr.width+' '+wr.height);
-  let dstr='M'+pts[0].join(' ');
-  for(let i=1;i<pts.length;i++){ const [x0,y0]=pts[i-1],[x1,y1]=pts[i]; const my=Math.max(y0,y1)+(y0===y1?8:6); dstr+=' C'+x0+' '+my+' '+x1+' '+my+' '+x1+' '+y1 }
-  svg.innerHTML='<path d="'+dstr+'"/>';
-  const dots=$('#dots'); dots.setAttribute('viewBox',svg.getAttribute('viewBox')); dots.innerHTML=pts.map(p=>'<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4.5"/>').join('');
-  const path=$('path',svg);
-  if(animate&&!reduced()){ const L=path.getTotalLength(); path.style.strokeDasharray=L; path.style.strokeDashoffset=L; path.getBoundingClientRect(); path.style.transition='stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)'; path.style.strokeDashoffset=0 }
-}
-
-/* ---------------- report that writes itself ---------------- */
-function money(n){const cur=$('#c-cur').value; try{return new Intl.NumberFormat(cur==='AED'?'en-AE':cur==='GBP'?'en-GB':cur==='AUD'?'en-AU':'en-US',{style:'currency',currency:cur,maximumFractionDigits:0}).format(n)}catch(_){return cur+' '+Math.round(n).toLocaleString()}}
-function impactText(){const c=calc(); return 'Downtime: 0 hours. At your inputs on the Downtime cost card, '+c.hrs+' hours down would have cost about '+money(c.total)+'.'}
-async function typeText(el,text,my){
-  if(reduced()){ el.textContent=text; return }
-  el.classList.add('caret');
-  for(let i=0;i<=text.length;i+=3){ if(my!==repRun) return; el.textContent=text.slice(0,i); await sleep(7) }
-  el.textContent=text; el.classList.remove('caret');
-}
-async function writeReport(){
-  const my=++repRun; reportDirty=false;
-  const rep=$('#rep'); rep.innerHTML=''; $('#repState').textContent='writing'; const sc=$('#repScroll'); sc.scrollTop=0;
-  const follow=()=>{ if(!reduced()&&sc.scrollHeight-sc.clientHeight-sc.scrollTop<260) sc.scrollTop=sc.scrollHeight };
-  const add=(tag,cls)=>{const e=document.createElement(tag); if(cls) e.className=cls; rep.appendChild(e); return e};
-  const caught=ALERTS.filter((a,i)=>a.real&&dec[i]==='esc').length, played=dec.some(Boolean);
-  await typeText(add('p','kick'),'Report INC-0417 · simulated · filed 09:46:05 by Northwall',my);
-  await typeText(add('h2','h m'),'Phishing to lateral movement, contained',my);
-  const dl=add('dl');
-  for(const [k,v] of [['Company','Harrow & Pine Logistics (fictional), 240 staff'],['Severity','High'],['Status','CONTAINED'],['Time to contain','2 min 51 s from first alert'],['Files lost','None'],['Your shift',played?caught+' of 5 attack signals escalated':'Not played']]){
-    if(my!==repRun) return; const dt=document.createElement('dt'),dd=document.createElement('dd'); dt.textContent=k; dl.append(dt,dd); if(v==='CONTAINED') dd.className='ok'; await typeText(dd,v,my) }
-  await typeText(add('h3'),'What happened',my);
-  await typeText(add('p','p'),'A payroll-themed email carried a macro that started PowerShell on laptop LT-0142. The attacker used the stolen session to sign in from outside and open the finance share on FS-02. Northwall linked five separate signals into one incident and contained it before any file was changed.',my); follow();
-  await typeText(add('h3'),'Timeline',my);
-  const w=add('div','tablewrap'), tb=document.createElement('table'); w.appendChild(tb);
-  tb.innerHTML='<caption class="sr">Incident timeline, simulated times, with your decision for each alert you saw</caption><thead><tr><th>Time</th><th>What happened</th><th>You</th></tr></thead><tbody></tbody>';
-  const body=$('tbody',tb);
-  for(const e of EV){ if(my!==repRun) return; const tr=body.insertRow(); tr.insertCell().textContent=e.t; const td=tr.insertCell(); const you=tr.insertCell(); you.className='you';
-    if(e.a!=null){ const d=dec[e.a]; you.textContent=d==='esc'?'ESCALATED':d==='dis'?'DISMISSED':'NOT SEEN'; if(d==='esc') you.classList.add('esc') }
-    await typeText(td,e.msg,my); follow() }
-  await typeText(add('h3'),'Actions Northwall took',my);
-  const ol=add('ol'); for(const x of ['Isolated LT-0142 from the network at 09:45:21.','Revoked every j.okafor session and forced a password reset at 09:45:22.','Blocked 203.0.113.44 at all three sites at 09:45:24.']){ if(my!==repRun) return; const li=document.createElement('li'); ol.appendChild(li); await typeText(li,x,my); follow() }
-  await typeText(add('h3'),'For your team',my);
-  const ol2=add('ol'); for(const x of ['Reimage LT-0142 before it rejoins the network.','Block the lookalike domain harrow-pine.co for all users.','Tell j.okafor what happened. Nobody is in trouble.']){ if(my!==repRun) return; const li=document.createElement('li'); ol2.appendChild(li); await typeText(li,x,my); follow() }
-  await typeText(add('h3'),'Business impact',my);
-  const imp=add('p','impact'); imp.id='impact'; await typeText(imp,impactText(),my); follow();
-  if(my!==repRun) return;
-  const end=add('div','endrow');
-  end.innerHTML='<p class="small" style="margin:0 0 12px">A security review shows what Northwall would find in your company.</p><div class="row"><button class="btn ink" type="button" data-go="book">Book a security review</button><button class="btn line" type="button" data-go="shift">Play the shift again</button></div>';
-  follow(); $('#repState').textContent='filed · 1 page';
-}
-
-/* ---------------- downtime cost ---------------- */
-const num=id=>{const v=parseFloat($('#'+id).value);return isFinite(v)&&v>=0?v:0};
-function calc(){ const emp=Math.round(num('c-emp')), rev=num('c-rev'), hrs=num('c-hrs'), wage=num('c-wage'); const lost=rev*hrs, idle=emp*hrs*wage; return {emp,rev,hrs,wage,lost,idle,total:lost+idle} }
-function renderCalc(){
-  const c=calc();
-  $('#costLead').textContent=(c.hrs===1?'1 hour':c.hrs+' hours')+' down would cost about';
-  $('#costTotal').textContent=money(c.total); $('#costRev').textContent=money(c.lost); $('#costIdle').textContent=money(c.idle);
-  const mx=Math.max(c.lost,c.idle,1); $('#barRev').style.width=(c.lost/mx*100)+'%'; $('#barIdle').style.width=(c.idle/mx*100)+'%';
-  const seats=Math.max(c.emp,50);
-  $$('.est').forEach(e=>e.textContent='About $'+(+e.dataset.rate*seats).toLocaleString('en-US')+' / month at '+seats+' staff'+(c.emp<50?' (50 seat minimum)':''));
-  const imp=$('#impact'); if(imp&&!imp.classList.contains('caret')) imp.textContent=impactText();
-}
-$('#calc').addEventListener('input',renderCalc);
-
-/* ---------------- booking ---------------- */
-(function(){ const sel=$('#b-week'); const d=new Date(); d.setHours(12); d.setDate(d.getDate()+((8-d.getDay())%7||7));
-  for(let i=0;i<3;i++){ const o=document.createElement('option'); o.textContent='Week of '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); sel.appendChild(o); d.setDate(d.getDate()+7) } })();
-$('#book').addEventListener('submit',e=>{
-  e.preventDefault(); const f=e.target, name=f.name.value.trim(), email=f.email.value.trim(), co=f.company.value.trim();
-  const okMail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-  [['b-name',!name],['b-email',!okMail],['b-co',!co]].forEach(([id,bad])=>$('#'+id).setAttribute('aria-invalid',String(bad)));
-  const errs=[]; if(!name) errs.push('your name'); if(!okMail) errs.push('a work email like you@company.com'); if(!co) errs.push('your company');
-  if(errs.length){ $('#bookErr').textContent='Add '+errs.join(', ')+' to book.'; ($('[aria-invalid="true"]',f)||f).focus(); return }
-  $('#bookErr').textContent=''; const done=$('#bookDone'); done.innerHTML='';
-  const b=document.createElement('b'); b.textContent='Request recorded · '+f.week.value; done.append(b, document.createTextNode('Thanks, '+name+'. On a live site a Northwall engineer would reply to '+email+' within one business day to set a time for '+co+'. This is a concept site, so nothing was sent.'));
-  f.hidden=true; done.hidden=false; done.focus();
-});
-
-/* ---------------- resize: ignore address-bar height jiggle ---------------- */
-let lw=innerWidth, lh=innerHeight, rt;
-addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ const w=innerWidth,h=innerHeight; if(w===lw&&Math.abs(h-lh)<160) return; lw=w; lh=h; layout(); drawThread(false) },120) });
-
-/* test hook for headless renders */
-window.__deck={go:(ch)=>go(first(ch),{fly:false}),decide,idx:()=>idx};
-
-renderCalc(); layout(); updateUI();
-})();
-</script>
+    <script type="module" src="./src/main.ts"></script>
 </body>
 </html>
