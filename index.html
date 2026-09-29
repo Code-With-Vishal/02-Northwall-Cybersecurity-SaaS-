@@ -33,12 +33,13 @@ body{margin:0;background:var(--ground);color:var(--ink);font:400 12px/1.5 var(--
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+[hidden]{display:none!important}
 .sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .verify{font-family:var(--mono);font-size:10.5px;color:var(--ink-2);background:repeating-linear-gradient(135deg,transparent 0 4px,rgba(17,18,20,.06) 4px 5px);border:1px dashed var(--rule);padding:0 5px;white-space:nowrap}
 
 /* ---------- shell ---------- */
 .app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"top top" "desk desk" "cmd dock";}
-.top{grid-area:top;display:flex;align-items:center;gap:18px;padding:0 16px;height:44px;border-bottom:1px solid var(--ink);background:var(--chrome);position:relative;z-index:50;min-width:0}
+.top{grid-area:top;overflow:hidden;display:flex;align-items:center;gap:18px;padding:0 16px;height:44px;border-bottom:1px solid var(--ink);background:var(--chrome);position:relative;z-index:50;min-width:0}
 .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.14em;font-size:12.5px;font-stretch:112.5%;white-space:nowrap}
 .brand svg{flex:none}
 .tagline{color:var(--ink-2);font-stretch:75%;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -195,7 +196,7 @@ button{cursor:pointer}
 .bar .track span{display:block;height:100%;background:var(--ink);transition:width .3s}
 .bar:nth-child(2) .track span{background:repeating-linear-gradient(135deg,var(--ink) 0 2px,transparent 2px 5px)}
 .bar b{font-variant-numeric:tabular-nums}
-@container (max-width:380px){.calc{grid-template-columns:minmax(0,1fr)}}
+@container (max-width:250px){.calc{grid-template-columns:minmax(0,1fr)}}
 
 /* pricing */
 .plans{list-style:none;margin:0 0 14px;padding:0;border-top:2px solid var(--ink)}
@@ -291,6 +292,14 @@ button{cursor:pointer}
 .m .dk .dot{right:calc(50% - 16px)}
 .m .dk .badge{right:calc(50% - 22px)}
 .m .slip{left:10px;width:calc(100% - 20px);max-height:40vh}
+.mini{display:none;list-style:none;margin:0;padding:0;font-size:11px}
+.mini li{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:3px 8px;padding:6px 0;border-bottom:1px dotted var(--rule);align-items:baseline}
+.mini .msg{grid-column:1/-1;overflow-wrap:anywhere}
+.mini .t{color:var(--ink-2);font-variant-numeric:tabular-nums}.mini .src{color:var(--ink-2);font-stretch:75%}
+.mini .sev{padding:1px 6px}
+.m .mini{display:block}
+.m .mapframe{flex:none;min-height:0;container-type:inline-size}
+.m .mapbox{width:100%}
 /* landscape phone: dock becomes a left rail, command row is one line */
 .m.l .app{grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-areas:"top top" "dock tabs" "dock desk" "dock cmd"}
 .m.l .top{height:38px}
@@ -303,7 +312,8 @@ button{cursor:pointer}
 .m.l .tab{height:28px}
 .m.l .tab[aria-selected="true"]{height:30px}
 .m.l .wb{padding:10px 14px}
-@media (max-width:380px){ .m .status .txt{display:none} .m .brand{font-size:11.5px;letter-spacing:.1em} .m .top .btn{padding:0 9px;font-size:10px} }
+@media (max-width:520px){ .m .status .txt{display:none} }
+@media (max-width:380px){ .m .brand{font-size:11.5px;letter-spacing:.1em} .m .top .btn{padding:0 9px;font-size:10px} }
 
 /* ---------- no-JS fallback: one linear report page ---------- */
 html:not(.js) body{overflow:auto}
@@ -404,6 +414,7 @@ html:not(.js) .mapframe{height:320px}
           </div>
         </div>
         <div class="mapcap"><span class="step" id="mapStep">IDLE</span><span id="mapCap" aria-live="polite">No activity. Three sites monitored. Run a scan to watch an attack path.</span></div>
+        <ol class="mini" id="mini" aria-hidden="true"></ol>
         <ul class="legend">
           <li><i style="background:var(--green)"></i>Monitored site</li>
           <li><i style="border:2px solid var(--red);border-radius:50%"></i>Attacker server</li>
@@ -789,6 +800,7 @@ function feedLine(e,isNew=true){
   li.innerHTML='<span class="t"></span><span class="sev '+e.sev+'"></span><span class="src"></span><span class="msg"></span>';
   li.children[0].textContent=e.t; li.children[1].textContent=e.tag; li.children[2].textContent=e.src; li.children[3].textContent=e.msg;
   $('#feed').appendChild(li); scrollFeed();
+  const mini=$('#mini'); mini.appendChild(li.cloneNode(true)); while(mini.children.length>3) mini.firstChild.remove();
   $('#feedCount').textContent=$$('#feed li:not(.divider):not(.wait)').length+' events';
   const top=S.z[S.z.length-1]; if(top!=='feed'&&S.mode==='m'){S.feedNew++;updateBadge()}
 }
@@ -796,7 +808,7 @@ function resetScan(){
   runId++; S.running=false; S.done=false; S.feedNew=0; updateBadge();
   $$('#feed .scan').forEach(n=>n.remove()); $('#feedWait').hidden=false;
   $('#feedCount').textContent='4 events';
-  mapReset(); $('#rep').hidden=true; $('#rep').innerHTML=''; $('#repEmpty').hidden=false; $('#repPage').textContent='draft';
+  $('#mini').innerHTML=''; mapReset(); $('#rep').hidden=true; $('#rep').innerHTML=''; $('#repEmpty').hidden=false; $('#repPage').textContent='draft';
   setStatus('idle','QUIET · 3 SITES WATCHED');
 }
 async function runScan(){
@@ -936,7 +948,10 @@ const ALIAS={demo:'scan',simulate:'scan',attack:'scan',run:'scan',price:'pricing
 const hist=[]; let hi=0;
 function showSlip(){ $('#slip').hidden=false }
 function hideSlip(){ $('#slip').hidden=true }
-function say(echo,out){
+let slipT;
+function say(echo,out,sticky){
+  clearTimeout(slipT);
+  if(!sticky) slipT=setTimeout(()=>{ const sl=$('#slip'); if(!sl.matches(':hover')&&!sl.contains(document.activeElement)) hideSlip() },4200);
   const log=$('#slipLog');
   const a=document.createElement('div'); a.className='echo'; a.textContent=echo;
   const b=document.createElement('div'); b.className='out';
@@ -953,10 +968,11 @@ function run(raw,{echo=true}={}){
   const text=raw.trim().toLowerCase(); if(!text) return;
   const parts=text.split(/\s+/); let c=parts[0]; if(c==='open'&&parts[1]){ c=parts[1] } c=ALIAS[c]||c;
   if(parts.slice(0,2).join(' ')==='book a'||text.startsWith('book a review')) c='book';
-  const reply=m=>echo&&say(raw.trim(),m);
+  const quiet=S.mode==='m'&&['scan','readme','feed','map','report','pricing','book','reset','tile'].includes(c);
+  const reply=(m,sticky)=>echo&&!(quiet&&!sticky)&&say(raw.trim(),m,sticky);
   const focusWin=!document.activeElement||document.activeElement.id!=='cmd';
   switch(c){
-    case 'help': reply(helpNode()); break;
+    case 'help': reply(helpNode(),true); break;
     case 'scan': { if(S.running){ reply('A scan is already running. Watch the feed and the map.'); break }
       reply('Simulated attack on Harrow & Pine Logistics (fictional). Watch the feed and the map.'); runScan(); break }
     case 'cost': {
@@ -976,14 +992,14 @@ function run(raw,{echo=true}={}){
     case 'clear': $('#slipLog').innerHTML=''; hideSlip(); break;
     default: {
       const near=Object.keys(CMDS).find(k=>k.startsWith(c.slice(0,2)));
-      reply('Unknown command "'+parts[0]+'".'+(near?' Did you mean '+near+'?':'')+' Type help for the list.');
+      reply('Unknown command "'+parts[0]+'".'+(near?' Did you mean '+near+'?':'')+' Type help for the list.',true);
     }
   }
 }
 const inp=$('#cmd');
 $('#cmdform').addEventListener('submit',e=>{ e.preventDefault(); const v=inp.value; if(!v.trim()) return; hist.push(v); hi=hist.length; inp.value=''; run(v) });
 inp.addEventListener('keydown',e=>{
-  if(e.key==='Tab'&&inp.value.trim()&&!e.shiftKey){ const v=inp.value.trim().toLowerCase(); const m=Object.keys(CMDS).filter(k=>k.startsWith(v)); if(m.length===1){ e.preventDefault(); inp.value=m[0]+' ' } else if(m.length>1){ e.preventDefault(); say(v+' ⇥',m.join('   ')) } }
+  if(e.key==='Tab'&&inp.value.trim()&&!e.shiftKey){ const v=inp.value.trim().toLowerCase(); const m=Object.keys(CMDS).filter(k=>k.startsWith(v)); if(m.length===1){ e.preventDefault(); inp.value=m[0]+' ' } else if(m.length>1){ e.preventDefault(); say(v+' ⇥',m.join('   '),true) } }
   else if(e.key==='ArrowUp'&&hist.length){ e.preventDefault(); hi=Math.max(0,hi-1); inp.value=hist[hi] }
   else if(e.key==='ArrowDown'&&hist.length){ e.preventDefault(); hi=Math.min(hist.length,hi+1); inp.value=hist[hi]||'' }
 });
